@@ -651,11 +651,10 @@ const TABS = [["dashboard", "Dashboard"], ["roadmap", "My roadmap"], ["profile",
 function viewApp() {
   const initials = (S.user.name || "You").trim().slice(0, 2).toUpperCase();
   const bell = '<div class="bell"><button class="themebtn" data-act="bell" aria-expanded="' + S.bell + '">Notifications' + (S.events.length ? " (" + S.events.length + ")" : "") + "</button>" + (S.bell ? '<div class="cardx drop stack"><b>Notifications</b>' + (S.events.length ? S.events.slice(0, 6).map(e => "<p>" + esc(e.text) + '<br><span class="muted">' + fmtDate(e.at) + "</span></p>").join("") : '<p class="muted">Nothing yet. Updates from your activity will appear here.</p>') + "</div>" : "") + "</div>";
-  const demo = S.result ? '<div class="notice"><span class="pill demo">Demo mode</span> Results come from a rule-based sample evaluator, not a live AI provider. Nothing is stored on a server.</div>' : "";
   let content = "";
   switch (S.tab) { case "dashboard": content = tabDashboard(); break; case "roadmap": content = tabRoadmap(); break; case "profile": content = tabProfile(); break; case "coaches": content = tabCoaches(); break; case "reviews": content = tabReviews(); break; case "billing": content = tabBilling(); break; default: content = tabSettings(); }
   return '<header class="appbar"><div class="container"><button class="brand" data-act="home">' + logo() + 'Career Compass</button><div class="row">' + bell + '<button class="themebtn" data-act="theme">Theme</button><button class="themebtn" data-act="tab" data-t="settings" aria-label="Profile and settings">' + esc(initials) + "</button></div></div></header>" +
-    '<div class="container shell"><nav class="side" aria-label="App">' + TABS.map(t => '<button class="' + (S.tab === t[0] ? "on" : "") + '" data-act="tab" data-t="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + "</button>").join("") + '</nav><main class="main">' + demo + content + "</main></div>";
+    '<div class="container shell"><nav class="side" aria-label="App">' + TABS.map(t => '<button class="' + (S.tab === t[0] ? "on" : "") + '" data-act="tab" data-t="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + "</button>").join("") + '</nav><main class="main">' + content + "</main></div>";
 }
 function noResult(msg) {
   return '<div class="cardx empty"><h2>Your starting point is waiting to be discovered.</h2><p>' + msg + '</p><button class="btn" data-act="begin-assess">Complete your first assessment</button></div>';
