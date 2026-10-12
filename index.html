@@ -1,0 +1,871 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Career Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: survey-chart identity. Contour lines, a swinging compass needle, a radar "compass rose" for skills, and a vertical trail for milestones. Palette follows the blueprint. */
+:root {
+  --bg: #F8FAFC; --surface: #FFFFFF; --ink: #102B46; --fg: #334155; --muted: #5B6B80; --line: #E2E8F0;
+  --accent: #0F766E; --accent-fg: #FFFFFF; --teal: #0D9488; --sky: #38BDF8; --soft: #E3F4F2; --sky-soft: #E0F2FE;
+  --ok: #15803D; --warn: #B45309; --warn-soft: #FEF3C7; --err: #B91C1C; --contour: #D5E0EA;
+  --font-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1B2D; --surface: #102B46; --ink: #F1F5F9; --fg: #CBD5E1; --muted: #9DB0C6; --line: #24435F;
+    --accent: #2DD4BF; --accent-fg: #052B27; --teal: #2DD4BF; --sky: #38BDF8; --soft: #0E3B45; --sky-soft: #0F3552;
+    --ok: #4ADE80; --warn: #FBBF24; --warn-soft: #3A2C0B; --err: #F87171; --contour: #173753; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1B2D; --surface: #102B46; --ink: #F1F5F9; --fg: #CBD5E1; --muted: #9DB0C6; --line: #24435F;
+  --accent: #2DD4BF; --accent-fg: #052B27; --teal: #2DD4BF; --sky: #38BDF8; --soft: #0E3B45; --sky-soft: #0F3552;
+  --ok: #4ADE80; --warn: #FBBF24; --warn-soft: #3A2C0B; --err: #F87171; --contour: #173753; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html.bigtext body { font-size: 18px; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; padding-inline: 16px; padding-block: 0 40px; }
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--ink); margin: 0; line-height: 1.1; letter-spacing: -0.015em; text-wrap: balance; }
+h1 { font-size: clamp(2.2rem, 6.4vw, 4rem); font-weight: 700; }
+h2 { font-size: clamp(1.6rem, 4.2vw, 2.4rem); font-weight: 700; }
+h3 { font-size: 1.2rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; max-width: 65ch; }
+a { color: var(--accent); }
+.mono { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.container { max-width: 1120px; margin-inline: auto; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.between { justify-content: space-between; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.grid.wide { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.cardx { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-width: 0; }
+.cardx.flat { background: transparent; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: var(--accent-fg); border: 2px solid var(--accent); border-radius: 999px; padding: 11px 22px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.sm { padding: 6px 14px; font-size: 0.875rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.pill.demo { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.notice { background: var(--warn-soft); color: var(--ink); border-left: 4px solid var(--warn); padding: 10px 14px; border-radius: 4px; font-size: 0.92rem; }
+.notice.info { background: var(--sky-soft); border-left-color: var(--sky); }
+.notice.err { border-left-color: var(--err); }
+.err { color: var(--err); font-weight: 600; }
+
+/* site header */
+.sitehead { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 10px 16px; }
+.sitehead .container { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; }
+.brand { display: flex; gap: 10px; align-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--ink); background: none; border: 0; cursor: pointer; padding: 0; }
+.nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.nav button { background: none; border: 0; cursor: pointer; padding: 6px 0; color: var(--fg); font-weight: 500; }
+.nav button:hover { color: var(--accent); }
+@media (max-width: 860px) { .nav.closed { display: none; } .nav { width: 100%; flex-direction: column; } .menubtn { display: inline-flex !important; } }
+.menubtn { display: none; }
+
+/* hero */
+.hero { position: relative; margin-inline: -16px; padding: 56px 16px 64px; overflow: hidden; }
+.hero svg.contours { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.hero .container { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; align-items: center; }
+.hero .copy { display: flex; flex-direction: column; gap: 20px; }
+.hero .lede { font-size: 1.18rem; }
+.bearings { display: flex; flex-direction: column; gap: 6px; border: 0; padding: 0; margin: 0; }
+.bearings legend { padding: 0; margin-bottom: 6px; }
+.bearing { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+.bearing input { accent-color: var(--accent); }
+.bearing .deg { margin-left: auto; }
+.bearing.on { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.compasswrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.compass { width: min(100%, 420px); height: auto; }
+.needle { transform-origin: 0 0; transition: transform 1.3s cubic-bezier(.3, 1.45, .5, 1); }
+.dial { fill: var(--surface); stroke: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .needle { transition: none; } }
+html.calm .needle { transition: none; }
+
+.section { padding-block: 72px 0; }
+.section .head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+.steps4 { counter-reset: s; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); list-style: none; padding: 0; margin: 0; }
+.steps4 li { position: relative; border-top: 3px solid var(--teal); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.steps4 li::before { counter-increment: s; content: counter(s); font-family: var(--font-mono); color: var(--muted); font-size: 0.8rem; }
+.plans { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.plans ul, ul.tick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+ul.tick li::before { content: "\2192"; color: var(--teal); margin-right: 8px; }
+details.faq { border-top: 1px solid var(--line); padding: 14px 0; }
+details.faq summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.faq p { margin-top: 8px; }
+.banner { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 40px 24px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.banner h2 { color: var(--bg); }
+.banner .btn { background: var(--sky); border-color: var(--sky); color: #06223a; }
+footer.foot { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 24px; display: flex; flex-direction: column; gap: 14px; }
+.flinks { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+/* forms */
+label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; color: var(--ink); }
+input[type="text"], input[type="url"], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0; }
+textarea { min-height: 120px; resize: vertical; }
+.opt { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; cursor: pointer; }
+.opt input { margin-top: 5px; accent-color: var(--accent); }
+.opt.on { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+code, .code { font-family: var(--font-mono); font-size: 0.85rem; background: var(--soft); padding: 2px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+pre.code { padding: 12px; overflow-x: auto; border-radius: 8px; margin: 0; }
+.conf { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.conf label { position: relative; display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; cursor: pointer; font-size: 0.85rem; background: var(--surface); }
+.conf label.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.conf input { position: absolute; opacity: 0; pointer-events: none; }
+.conf label:focus-within { outline: 3px solid var(--sky); outline-offset: 2px; }
+.progress { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.progress li { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.progress li.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.progress li.done { border-color: var(--teal); color: var(--accent); }
+.spin { width: 26px; height: 26px; border: 3px solid var(--line); border-top-color: var(--teal); border-radius: 50%; animation: sp 1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* app shell */
+.appbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 10px 16px; }
+.appbar .container { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; padding-top: 24px; align-items: start; }
+@media (max-width: 860px) { .shell { grid-template-columns: minmax(0, 1fr); } }
+.side { position: sticky; top: 70px; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 860px) { .side { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 6px; } }
+.side button { text-align: left; white-space: nowrap; background: none; border: 0; border-left: 3px solid transparent; padding: 9px 12px; cursor: pointer; font-weight: 500; border-radius: 0 6px 6px 0; }
+.side button.on { border-left-color: var(--teal); background: var(--soft); color: var(--ink); font-weight: 600; }
+@media (max-width: 860px) { .side button { border-left: 0; border-bottom: 3px solid transparent; border-radius: 6px 6px 0 0; } .side button.on { border-bottom-color: var(--teal); } }
+.main { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.kpis { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.kpi { border-left: 3px solid var(--teal); padding: 4px 0 4px 14px; display: flex; flex-direction: column; gap: 2px; }
+.kpi b { font-family: var(--font-display); font-size: 1.5rem; color: var(--ink); line-height: 1.15; }
+.sk { display: grid; grid-template-columns: minmax(110px, 190px) 1fr auto; gap: 12px; align-items: center; padding: 6px 0; }
+.sk .track { position: relative; height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.sk .track i { position: absolute; inset: 0 auto 0 0; background: var(--teal); border-radius: 5px; }
+.sk .track u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--sky); }
+.sk .zone { position: absolute; top: 0; bottom: 0; left: 60%; right: 0; background: repeating-linear-gradient(45deg, transparent 0 4px, var(--contour) 4px 5px); }
+@media (max-width: 520px) { .sk { grid-template-columns: 1fr auto; } .sk .track { grid-column: 1 / -1; order: 3; } }
+.radarbox svg { width: 100%; max-width: 440px; height: auto; display: block; margin-inline: auto; }
+.rtext { fill: var(--fg); font-family: var(--font-body); font-size: 11px; }
+.trail { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.stop { position: relative; padding: 0 0 22px 34px; border-left: 2px dashed var(--line); margin-left: 10px; }
+.stop:last-child { border-left-color: transparent; }
+.stop::before { content: ""; position: absolute; left: -11px; top: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--bg); border: 3px solid var(--line); }
+.stop.in_progress::before { border-color: var(--sky); }
+.stop.submitted::before { border-color: var(--teal); background: var(--soft); }
+.stop.completed::before { border-color: var(--ok); background: var(--ok); }
+.task { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.task input { margin-top: 5px; accent-color: var(--accent); }
+.coach { display: flex; flex-direction: column; gap: 12px; }
+.chip { display: inline-flex; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; font-size: 0.85rem; background: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.slot { cursor: pointer; }
+.slot.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.bell { position: relative; }
+.drop { position: absolute; right: 0; top: 110%; width: min(320px, 86vw); z-index: 30; box-shadow: 0 10px 30px rgba(8, 25, 45, 0.18); }
+.switch { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); }
+.switch input { width: 20px; height: 20px; accent-color: var(--accent); }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 10px; z-index: 50; max-width: min(520px, 92vw); font-size: 0.92rem; }
+.toast[hidden] { display: none; }
+.empty { text-align: center; padding: 36px 16px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+pre.json { margin: 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.78rem; background: var(--bg); padding: 12px; border-radius: 8px; max-height: 280px; }
+.themebtn { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; }
+</style>
+
+<div id="app"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+/*CORE_START*/
+const SKILLS = [
+  { id: "html", name: "HTML & structure", short: "HTML" },
+  { id: "css", name: "CSS & responsive layout", short: "CSS" },
+  { id: "js", name: "JavaScript fundamentals", short: "JS" },
+  { id: "debug", name: "Debugging & problem-solving", short: "Debug" },
+  { id: "git", name: "Git & version control", short: "Git" },
+  { id: "a11y", name: "Accessibility & usability", short: "A11y" },
+  { id: "plan", name: "Project planning & communication", short: "Plan" },
+  { id: "portfolio", name: "Portfolio presentation", short: "Portfolio" }
+];
+const LEVELS = [null,
+  { name: "Exploring", meaning: "Understands basic concepts with significant support", evidence: "Can identify HTML elements and explain their purpose" },
+  { name: "Developing", meaning: "Can complete small tasks with guidance", evidence: "Builds a basic page and fixes simple CSS issues" },
+  { name: "Project-ready", meaning: "Can build a small, coherent project with limited help", evidence: "Creates a responsive multi-section site and explains decisions" },
+  { name: "Work-ready for defined tasks", meaning: "Can complete scoped tasks to an agreed quality standard", evidence: "Builds, tests, documents, and revises a project using a rubric" },
+  { name: "Advancing", meaning: "Can handle greater complexity and improve work independently", evidence: "Maintains a larger project, evaluates trade-offs, and helps others" }
+];
+const MAX_LEVEL = 3; // Levels 4-5 need reviewed work samples, so this assessment cannot assign them.
+
+const QUESTIONS = [
+  { id: "q1", skill: "html", prompt: "You are building a blog post page. Which markup structures it best?", options: [
+    { t: "Use <div> elements with classes for the title, text and date.", l: 1 },
+    { t: "Use <h1> for the title and <p> for paragraphs.", l: 2 },
+    { t: "Use <main> and <article>, one <h1>, <time> for the date, and headings in order for sub-sections.", l: 3 }] },
+  { id: "q2", skill: "css", prompt: "A card grid must show one column on phones and three on desktop. What would you do?", options: [
+    { t: "Use percentage widths and media queries at a few common device sizes.", l: 2 },
+    { t: "Give each card a fixed width in pixels.", l: 1 },
+    { t: "Use CSS grid with auto-fit and minmax so columns adapt, then check narrow screens and long text.", l: 3 }] },
+  { id: "q3", skill: "js", prompt: "What happens here?", code: "const items = [1, 2, 3];\nconst doubled = items.map(n => n * 2);\nconsole.log(items, doubled);", options: [
+    { t: "It logs [2, 4, 6] twice, because map changes the original array.", l: 1 },
+    { t: "It logs [1, 2, 3] and [2, 4, 6].", l: 2 },
+    { t: "It logs [1, 2, 3] and [2, 4, 6]. map returns a new array, so I would use forEach when I only need side effects.", l: 3 }] },
+  { id: "q4", skill: "debug", prompt: "A button does nothing when clicked. What do you do first?", options: [
+    { t: "Open the console, look for errors, and check the click handler is attached.", l: 2 },
+    { t: "Rewrite the whole page in case something is broken.", l: 1 },
+    { t: "Reproduce it, read the console, isolate the cause with a minimal test, change one thing at a time and retest.", l: 3 }] },
+  { id: "q5", skill: "git", prompt: "You changed three files for two different features. How do you commit?", options: [
+    { t: "Commit everything together with the message \"update\".", l: 1 },
+    { t: "Use a branch per feature, small commits with clear messages, and open a pull request for review.", l: 3 },
+    { t: "Make a separate commit for each feature.", l: 2 }] },
+  { id: "q6", skill: "a11y", prompt: "A sign-up form uses only placeholder text instead of labels. What is the fix?", options: [
+    { t: "There is no issue. Placeholders work fine as labels.", l: 1 },
+    { t: "Placeholders vanish when typing, so add visible <label> elements.", l: 2 },
+    { t: "Use <label for>, keep labels visible, check keyboard order and contrast, and link error messages to their fields.", l: 3 }] }
+];
+
+const SKILL_TEXT = {
+  html: ["You chose a semantic, well-ordered page structure.", "Show that you can structure a full page with landmarks and a sensible heading order."],
+  css: ["You chose a layout approach that adapts to screen size.", "Show a layout that adapts from phone to desktop without fixed widths."],
+  js: ["You read array methods accurately and explained them.", "Show that you can predict and explain what array methods return."],
+  debug: ["You described a structured debugging routine.", "Show a repeatable routine: reproduce, isolate, change one thing, retest."],
+  git: ["You described a clean branch-and-commit workflow.", "Show small, clearly named commits for separate pieces of work."],
+  a11y: ["You recognised why visible labels and keyboard checks matter.", "Show a form that works by keyboard, with visible labels and clear errors."],
+  plan: ["Your plan was ordered, scoped and had a way to check the result.", "Describe a small scoped plan with ordered steps and a way to check the result."],
+  portfolio: ["You thought about who will view your portfolio and what each section should show.", "Say who will view your portfolio and what evidence each section shows."]
+};
+
+const MILESTONES = {
+  m_html: { id: "m_html", title: "Build a semantic blog post page", skills: ["html", "a11y"], hours: 4,
+    why: "Good structure is the base for styling, accessibility and search.",
+    tasks: [["Plan the outline", "List the parts of a blog post and choose the HTML element for each.", "Your outline"],
+      ["Write the HTML", "Build the page with main, article, header, time and ordered headings.", "A link to, or paste of, your HTML"],
+      ["Validate it", "Run the page through an HTML validator and fix what it reports.", "A short note on what you fixed"]],
+    criteria: ["One h1 and headings in order", "Main content sits inside landmarks", "The validator reports no errors"] },
+  m_css: { id: "m_css", title: "Make a responsive card grid", skills: ["css"], hours: 5,
+    why: "Most visitors arrive on a phone. A layout that adapts is a core front-end skill.",
+    tasks: [["Sketch two layouts", "Draw a phone and a desktop layout for six cards.", "Photo or description of your sketches"],
+      ["Build the grid", "Use CSS grid with auto-fit and minmax. Avoid fixed pixel widths.", "A link to, or paste of, your CSS"],
+      ["Break it on purpose", "Test at 320px wide and with a very long title. Fix what overflows.", "Two screenshots or a short description"]],
+    criteria: ["Columns change with screen width", "Nothing scrolls sideways at 320px", "Long text wraps inside its card"] },
+  m_js: { id: "m_js", title: "Build a small interactive list", skills: ["js", "debug"], hours: 6,
+    why: "Arrays and events are the base of most interactive pages.",
+    tasks: [["List the behaviours", "Write what the list must do: add, remove, mark done.", "Your behaviour list"],
+      ["Build it", "Store items in an array and render the list from it.", "A link to, or paste of, your code"],
+      ["Explain it", "Write three sentences on what each array method you used returns.", "Your written explanation"]],
+    criteria: ["Add, remove and mark done all work", "State lives in one array", "You can explain what each method returns"] },
+  m_debug: { id: "m_debug", title: "Keep a debugging log for three bugs", skills: ["debug"], hours: 3,
+    why: "A repeatable routine saves hours and shows employers how you think.",
+    tasks: [["Pick three bugs", "Choose small bugs from your own code or a practice repo.", "A list of the three bugs"],
+      ["Log each one", "For each: how you reproduced it, what you checked, the cause, the fix.", "Your written log"],
+      ["Retest", "Confirm each fix and note what you would check next time.", "A closing note"]],
+    criteria: ["Each bug has steps to reproduce", "Each fix changes one thing", "Each fix was retested"] },
+  m_git: { id: "m_git", title: "Ship a change with a branch and pull request", skills: ["git"], hours: 3,
+    why: "Teams share work through branches and reviews.",
+    tasks: [["Create a branch", "Branch from main for one small change.", "Your branch name"],
+      ["Commit in small steps", "Make at least three commits with clear messages.", "Your commit list"],
+      ["Open a pull request", "Describe the change and what a reviewer should check.", "Your pull request text"]],
+    criteria: ["Commits are small and named clearly", "The change lives on its own branch", "The pull request explains the change"] },
+  m_a11y: { id: "m_a11y", title: "Make a form usable by keyboard", skills: ["a11y", "html"], hours: 4,
+    why: "Accessible forms work for more people and show professional care.",
+    tasks: [["Build the form", "Create a form with visible labels linked to inputs.", "A link to, or paste of, your HTML"],
+      ["Test by keyboard", "Complete the form using only Tab, Shift+Tab, Space and Enter.", "A note on what you found"],
+      ["Add clear errors", "Show an error message tied to each field it describes.", "A short description of how errors appear"]],
+    criteria: ["Every input has a visible label", "Tab order follows reading order", "Errors name the field and the fix"] },
+  m_portfolio: { id: "m_portfolio", title: "Publish portfolio page v1", skills: ["portfolio", "plan"], hours: 8,
+    why: "A small, honest portfolio gives a coach and an employer something concrete to review.",
+    tasks: [["Plan the page", "Write who will view it and what each section must show.", "Your short plan"],
+      ["Build one project section", "Describe one project: the goal, what you built, what you learned.", "A link to, or paste of, the section"],
+      ["Check it on a phone", "Open the page on a phone and note what to fix.", "A short note on what you changed"]],
+    criteria: ["The page states who it is for", "One project explains goal, work and learning", "It reads well on a phone"] }
+};
+const SKILL_TO_MS = { html: "m_html", css: "m_css", js: "m_js", debug: "m_debug", git: "m_git", a11y: "m_a11y", plan: "m_portfolio", portfolio: "m_portfolio" };
+const TIE_ORDER = ["html", "css", "js", "debug", "git", "a11y", "plan", "portfolio"];
+
+const COACHES = [
+  { id: "c1", name: "Nadia (sample)", headline: "Front-end foundations", skills: ["html", "css", "a11y"], langs: ["English", "Bangla"], formats: ["video", "async_review"], slots: ["Tue 18:00", "Thu 20:00"], approach: "Sample text: a short weekly review of one small piece of work, with written feedback." },
+  { id: "c2", name: "Tahmid (sample)", headline: "JavaScript and debugging", skills: ["js", "debug", "git"], langs: ["English", "Bangla"], formats: ["video", "in_person"], slots: ["Wed 19:00", "Sat 10:00"], approach: "Sample text: pair debugging sessions where you drive and the coach asks questions." },
+  { id: "c3", name: "Maya (sample)", headline: "Planning and portfolios", skills: ["plan", "portfolio", "a11y"], langs: ["English"], formats: ["video", "async_review"], slots: ["Mon 17:30", "Fri 16:00"], approach: "Sample text: turns one project into a clear portfolio story, then reviews each draft." },
+  { id: "c4", name: "Farhan (sample)", headline: "Layout and interaction", skills: ["css", "js", "portfolio"], langs: ["Bangla", "English"], formats: ["in_person", "video"], slots: ["Sun 11:00", "Thu 15:00"], approach: "Sample text: builds a small project with you, then reviews the code together." }
+];
+const FORMAT_LABEL = { video: "Video call", in_person: "In person", async_review: "Written review" };
+
+const words = s => ((s || "").trim().match(/\S+/g) || []).length;
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+const KW = {
+  html: /semantic|heading|<h1|header|\bnav\b|\bmain\b|article|landmark/i,
+  css: /responsive|media quer|flex|grid|mobile|breakpoint|viewport|phone/i,
+  js: /javascript|\bjs\b|\bdom\b|event|array|function/i,
+  debug: /debug|console|devtools|inspect|reproduce|fix/i,
+  git: /\bgit\b|commit|branch|github|version control/i,
+  a11y: /accessib|alt text|contrast|keyboard|aria|screen reader|label/i
+};
+
+function validateDraft(d) {
+  const missing = QUESTIONS.filter(q => d.answers[q.id] === undefined);
+  if (missing.length) return { ok: false, msg: "Please answer all six skill questions. Choosing \"I'm not sure\" is fine." };
+  if (!d.skip && words(d.practical) < 25) return { ok: false, msg: "Add a little more to the practical task (at least 25 words), or tick the box to skip it. Skipping lowers what we can say about planning and portfolio." };
+  return { ok: true };
+}
+
+function scoreAssessment(d, user) {
+  const skills = SKILLS.map(s => ({ skillId: s.id, level: null, confidence: "low", evidenceIds: [], self: (d.conf && d.conf[s.id]) || null, note: "" }));
+  const get = id => skills.find(s => s.skillId === id);
+  const evidence = [];
+  QUESTIONS.forEach((q, i) => {
+    const a = d.answers[q.id];
+    const sc = get(q.skill);
+    const unsure = a === "unsure";
+    sc.level = unsure ? 1 : q.options[a].l;
+    if (unsure) sc.note = "You said you were not sure, so this is recorded as Exploring.";
+    sc.evidenceIds.push("E-Q" + (i + 1));
+    evidence.push({ id: "E-Q" + (i + 1), type: "Skill question", detail: q.prompt, skill: q.skill });
+  });
+  const text = d.skip ? "" : (d.practical || "");
+  const w = words(text);
+  const enough = w >= 25;
+  if (text) {
+    evidence.push({ id: "E-P1", type: "Practical task", detail: "Your written plan (" + w + " words)", skill: "plan" });
+    Object.keys(KW).forEach(id => { if (enough && KW[id].test(text)) { const sc = get(id); sc.evidenceIds.push("E-P1"); sc.confidence = "medium"; } });
+  }
+  const link = (d.link || "").trim();
+  const linkOk = /^https?:\/\/[^\s]+\.[^\s]+$/i.test(link);
+  if (linkOk) evidence.push({ id: "E-L1", type: "Portfolio link", detail: "Provided but not opened or evaluated in this demo", skill: "portfolio" });
+  const plan = get("plan"), port = get("portfolio");
+  if (enough) {
+    const planSig = [/first|then|next|step|milestone|phase|order/i, /small|simple|mvp|one page|minimal|scope/i, /checklist|track|task|issue|kanban|board|to-?do|notes/i, /test|check|review|feedback|phone|device/i].filter(r => r.test(text)).length;
+    const portSig = [/about|projects?|contact|case stud|resume|\bcv\b/i, /recruiter|employer|visitor|audience|hiring|client|reader/i, /screenshot|live|demo|readme|result|what i (built|learned)|goal/i].filter(r => r.test(text)).length;
+    plan.level = planSig === 0 ? 1 : planSig === 1 ? 2 : 3;
+    port.level = portSig === 0 ? 1 : portSig === 1 ? 2 : 3;
+    plan.evidenceIds.push("E-P1"); port.evidenceIds.push("E-P1");
+    plan.confidence = w >= 40 ? "medium" : "low"; port.confidence = w >= 40 ? "medium" : "low";
+  } else if (text) {
+    plan.note = "The practical task was too short to assess."; port.note = plan.note;
+  } else {
+    plan.note = "No practical evidence was provided."; port.note = plan.note;
+  }
+  if (linkOk) port.evidenceIds.push("E-L1");
+
+  const mismatch = [];
+  skills.forEach(s => { if (s.self && s.level && s.self >= 4 && s.level <= 2) mismatch.push(s.skillId); });
+  const evidenced = skills.filter(s => s.level !== null);
+  const avg = evidenced.reduce((a, s) => a + s.level, 0) / evidenced.length;
+  const overall = clamp(Math.round(avg), 1, MAX_LEVEL);
+  const reviewNeeded = !enough || mismatch.length > 0;
+
+  const ranked = evidenced.slice().sort((a, b) => a.level - b.level || TIE_ORDER.indexOf(a.skillId) - TIE_ORDER.indexOf(b.skillId));
+  const priorityGaps = ranked.filter(s => s.level < MAX_LEVEL).slice(0, 3).map(s => s.skillId);
+  const topStrengths = evidenced.filter(s => s.level >= 2).sort((a, b) => b.level - a.level || TIE_ORDER.indexOf(a.skillId) - TIE_ORDER.indexOf(b.skillId)).slice(0, 3).map(s => s.skillId);
+  let nextId = priorityGaps.length ? SKILL_TO_MS[priorityGaps[0]] : "m_portfolio";
+  if (user && user.help === "portfolio" && priorityGaps.includes("portfolio")) nextId = "m_portfolio";
+
+  const uncertainty = [];
+  skills.filter(s => s.level !== null && s.confidence === "low").forEach(s => uncertainty.push(SKILLS.find(x => x.id === s.skillId).name + ": based on a single piece of evidence, so confidence is low."));
+  skills.filter(s => s.level === null).forEach(s => uncertainty.push(SKILLS.find(x => x.id === s.skillId).name + ": no evidence yet, so no level is shown."));
+  mismatch.forEach(id => uncertainty.push(SKILLS.find(x => x.id === id).name + ": you felt more confident than the answer showed. That is common. A coach can help you find out why."));
+  if (linkOk) uncertainty.push("Your portfolio link was not opened or evaluated in this demo.");
+  return {
+    assessmentId: "demo-" + Date.now().toString(36), careerTrackId: "web-development", rubricVersion: "web-dev-sample-0.1", mode: "demo",
+    status: reviewNeeded ? "needs_human_review" : "completed",
+    overallLevel: overall, skillScores: skills, topStrengths, priorityGaps, evidence,
+    recommendedNextMilestoneId: nextId, uncertainty,
+    limitations: [
+      "Demo assessment: scored by a simple rule-based sample evaluator, not a live AI provider.",
+      "The skill framework is a sample and has not been reviewed by practitioners.",
+      "One short assessment cannot show job readiness. Levels 4 and 5 need reviewed work samples.",
+      "Self-reported confidence is shown separately from what your answers demonstrated."
+    ],
+    createdAt: new Date().toISOString()
+  };
+}
+
+function weeklyHours(h) { return { "lt2": 1.5, "2-4": 3, "5-7": 6, "8+": 9 }[h] || 3; }
+
+function buildLearningPlan(result, user) {
+  if (!result || result.mode === undefined) throw new Error("A validated assessment is required.");
+  const ids = [];
+  const add = id => { if (id && !ids.includes(id)) ids.push(id); };
+  add(result.recommendedNextMilestoneId);
+  result.priorityGaps.forEach(g => add(SKILL_TO_MS[g]));
+  const picked = ids.slice(0, 3);
+  const milestones = picked.map(id => {
+    const m = MILESTONES[id];
+    return { id: m.id, title: m.title, whyItMatters: m.why, targetSkills: m.skills, estimatedHours: m.hours, completionCriteria: m.criteria,
+      tasks: m.tasks.map((t, i) => ({ id: id + "_t" + (i + 1), title: t[0], instructions: t[1], evidenceRequired: t[2] })), status: "not_started" };
+  });
+  const total = milestones.reduce((a, m) => a + m.estimatedHours, 0);
+  const wk = weeklyHours(user && user.hours);
+  return { planId: "plan-" + result.assessmentId, assessmentId: result.assessmentId, careerTrackId: result.careerTrackId, planVersion: "1", milestones,
+    totalHours: total, approxWeeks: Math.max(1, Math.ceil(total / wk)), reviewRecommended: result.status === "needs_human_review" };
+}
+
+function matchCoaches(user, result, filters) {
+  const gaps = result ? result.priorityGaps : [];
+  return COACHES.map(c => {
+    const reasons = [], missing = [];
+    if (user.lang && c.langs.includes(user.lang)) reasons.push("Speaks " + user.lang);
+    else if (user.lang) missing.push("Does not list " + user.lang);
+    const gapHit = gaps.filter(g => c.skills.includes(g));
+    if (gapHit.length) reasons.push("Lists your priority gap" + (gapHit.length > 1 ? "s" : "") + ": " + gapHit.map(g => SKILLS.find(s => s.id === g).short).join(", "));
+    else if (gaps.length) missing.push("None of your priority gaps are listed");
+    if (filters.format && filters.format !== "any") { if (c.formats.includes(filters.format)) reasons.push("Offers " + FORMAT_LABEL[filters.format].toLowerCase()); else missing.push("Does not offer " + FORMAT_LABEL[filters.format].toLowerCase()); }
+    reasons.push("Has " + c.slots.length + " listed time slots");
+    missing.push("Price, ratings and verification: not available in this prototype");
+    const score = reasons.length - missing.filter(m => !m.startsWith("Price")).length;
+    return { coach: c, reasons, missing, score };
+  }).filter(m => (!filters.format || filters.format === "any" || m.coach.formats.includes(filters.format)) && (!filters.lang || filters.lang === "any" || m.coach.langs.includes(filters.lang)) && (!filters.skill || filters.skill === "any" || m.coach.skills.includes(filters.skill)))
+    .sort((a, b) => b.score - a.score);
+}
+/*CORE_END*/
+
+/* ---------- state ---------- */
+const BEARINGS = [
+  { key: "exploring", label: "I'm exploring my interests.", deg: 20 },
+  { key: "learning", label: "I'm learning a skill.", deg: 95 },
+  { key: "firstjob", label: "I'm preparing for my first job.", deg: 160 },
+  { key: "changing", label: "I'm changing career direction.", deg: 235 },
+  { key: "working", label: "I'm already working and want to grow.", deg: 310 }
+];
+const HELP = [["skills", "Understanding my current skills."], ["next", "Choosing what to learn next."], ["portfolio", "Building a portfolio."], ["interview", "Preparing for interviews."], ["change", "Planning a career change."]];
+const HOURS = [["lt2", "Less than 2 hours."], ["2-4", "2–4 hours."], ["5-7", "5–7 hours."], ["8+", "8 or more hours."]];
+const STATUS_LABEL = { not_started: "Not started", in_progress: "In progress", submitted: "Submitted", needs_revision: "Needs revision", completed: "Completed" };
+
+const fresh = () => ({
+  view: "site", tab: "dashboard", menu: false, bell: false, bearing: 2, obStep: 0, obErr: "",
+  user: { name: "", situation: null, help: null, hours: null, lang: "English", adult: false, consent: false, reduceMotion: false, bigText: false },
+  draft: { step: 0, answers: {}, conf: {}, practical: "", link: "", skip: false }, aErr: "", processing: false,
+  result: null, plan: null, openMs: null, evidence: {}, tasks: {}, msErr: {},
+  filters: { format: "any", lang: "any", skill: "any" }, reqOpen: null, reqForm: { goal: "", slots: [], type: "video" }, reqErr: "", requests: [],
+  reviews: [], errorReports: [], billingMsg: "", prefs: { inapp: true, email: false, freq: "milestones", quiet: "" }, exportOpen: false, delConfirm: false, events: [], saved: false
+});
+let S = fresh();
+try { const raw = localStorage.getItem("cc-draft"); if (raw) { const p = JSON.parse(raw); if (p && p.draft && p.user) { S.savedDraft = p; S.saved = true; } } } catch (e) { }
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = iso => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const skillName = id => SKILLS.find(s => s.id === id).name;
+const note = text => S.events.unshift({ text, at: new Date().toISOString() });
+let toastTimer;
+function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4200); }
+
+/* ---------- visual pieces ---------- */
+function contours() {
+  let out = "";
+  const cx = 880, cy = 260;
+  for (let k = 0; k < 12; k++) {
+    const r0 = 50 + k * 52; let d = "";
+    for (let i = 0; i <= 120; i++) {
+      const a = i / 120 * Math.PI * 2;
+      const r = r0 * (1 + 0.09 * Math.sin(3 * a + k * 0.7) + 0.05 * Math.sin(5 * a + k * 1.3) + 0.03 * Math.sin(8 * a + k));
+      d += (i ? "L" : "M") + (cx + Math.cos(a) * r * 1.25).toFixed(1) + " " + (cy + Math.sin(a) * r).toFixed(1);
+    }
+    out += '<path d="' + d + 'Z" fill="none" stroke="var(--contour)" stroke-width="' + (k % 4 === 0 ? 1.6 : 1) + '"/>';
+  }
+  return '<svg class="contours" viewBox="0 0 1200 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + out + "</svg>";
+}
+function compassSVG(deg) {
+  let ticks = "";
+  for (let i = 0; i < 72; i++) {
+    const a = i * 5, long = i % 18 === 0, mid = i % 6 === 0, r1 = 170, r2 = long ? 148 : mid ? 156 : 162;
+    const rad = (a - 90) * Math.PI / 180;
+    ticks += '<line x1="' + (Math.cos(rad) * r1).toFixed(1) + '" y1="' + (Math.sin(rad) * r1).toFixed(1) + '" x2="' + (Math.cos(rad) * r2).toFixed(1) + '" y2="' + (Math.sin(rad) * r2).toFixed(1) + '" stroke="var(--ink)" stroke-width="' + (long ? 2 : 1) + '"/>';
+  }
+  const cards = [["N", 0, -128], ["E", 128, 5], ["S", 0, 138], ["W", -128, 5]].map(c => '<text x="' + c[1] + '" y="' + c[2] + '" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-weight="700" font-size="22" fill="var(--ink)">' + c[0] + "</text>").join("");
+  return '<svg class="compass" viewBox="-190 -190 380 380" role="img" aria-label="Compass needle pointing to bearing ' + deg + ' degrees"><circle r="184" class="dial" stroke-width="2"/><circle r="120" fill="none" stroke="var(--line)"/><circle r="70" fill="none" stroke="var(--line)" stroke-dasharray="3 5"/>' + ticks + cards +
+    '<g class="needle" style="transform:rotate(' + deg + 'deg)"><polygon points="0,-112 11,0 -11,0" fill="var(--teal)"/><polygon points="0,112 11,0 -11,0" fill="var(--sky)" opacity="0.55"/><circle r="9" fill="var(--ink)"/><circle r="3" fill="var(--bg)"/></g></svg>';
+}
+function radar(result) {
+  const R = 118, n = SKILLS.length;
+  const pt = (i, lv) => { const a = (-90 + i * 360 / n) * Math.PI / 180, r = R * lv / 5; return [Math.cos(a) * r, Math.sin(a) * r]; };
+  let g = "";
+  for (let k = 1; k <= 5; k++) g += '<circle r="' + (R * k / 5) + '" fill="' + (k > MAX_LEVEL ? "var(--contour)" : "none") + '" fill-opacity="' + (k > MAX_LEVEL ? 0.25 : 1) + '" stroke="var(--line)"' + (k > MAX_LEVEL ? ' stroke-dasharray="4 4"' : "") + "/>";
+  let ax = "", lb = "";
+  SKILLS.forEach((s, i) => {
+    const p = pt(i, 5), q = pt(i, 5.55);
+    ax += '<line x1="0" y1="0" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="var(--line)"/>';
+    const anchor = Math.abs(q[0]) < 8 ? "middle" : q[0] > 0 ? "start" : "end";
+    lb += '<text class="rtext" x="' + q[0].toFixed(1) + '" y="' + (q[1] + 4).toFixed(1) + '" text-anchor="' + anchor + '">' + s.short + "</text>";
+  });
+  const sc = result.skillScores;
+  const poly = key => sc.map((s, i) => pt(i, s[key] || 0).map(v => v.toFixed(1)).join(",")).join(" ");
+  const hasSelf = sc.some(s => s.self);
+  const dots = sc.map((s, i) => { const p = pt(i, s.level || 0); return s.level ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="4" fill="var(--teal)" stroke="var(--surface)" stroke-width="1.5"/>' : '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3.5" fill="var(--surface)" stroke="var(--muted)" stroke-dasharray="2 2"/>'; }).join("");
+  const label = "Skill levels: " + sc.map(s => skillName(s.skillId) + " " + (s.level ? "level " + s.level : "no evidence")).join(", ");
+  return '<svg viewBox="-205 -172 410 344" role="img" aria-label="' + esc(label) + '">' + g + ax +
+    (hasSelf ? '<polygon points="' + poly("self") + '" fill="none" stroke="var(--sky)" stroke-width="2" stroke-dasharray="5 4"/>' : "") +
+    '<polygon points="' + poly("level") + '" fill="var(--teal)" fill-opacity="0.28" stroke="var(--teal)" stroke-width="2.5"/>' + dots + lb + "</svg>";
+}
+
+/* ---------- views: public site ---------- */
+function siteHeader() {
+  return '<header class="sitehead"><div class="container"><button class="brand" data-act="scroll" data-id="top" aria-label="Career Compass home">' + logo() + 'Career Compass</button>' +
+    '<button class="btn ghost sm menubtn" data-act="menu" aria-expanded="' + S.menu + '">Menu</button>' +
+    '<nav class="nav' + (S.menu ? "" : " closed") + '" aria-label="Main">' + [["how", "How it works"], ["tracks", "Skill tracks"], ["coaching", "Coaches"], ["pricing", "Pricing"], ["trust", "Safety and trust"], ["faq", "FAQ"]].map(n => '<button data-act="scroll" data-id="' + n[0] + '">' + n[1] + "</button>").join("") + "</nav>" +
+    '<div class="row"><button class="themebtn" data-act="theme">Theme</button><button class="btn ghost sm" data-act="signin">Sign in</button><button class="btn sm" data-act="start">Sign up</button></div></div></header>';
+}
+function logo() { return '<svg width="28" height="28" viewBox="-14 -14 28 28" aria-hidden="true"><circle r="12.5" fill="none" stroke="var(--ink)" stroke-width="2"/><polygon points="0,-10 3,0 -3,0" fill="var(--teal)"/><polygon points="0,10 3,0 -3,0" fill="var(--sky)"/></svg>'; }
+
+function viewSite() {
+  const b = BEARINGS[S.bearing];
+  const faqs = [
+    ["What is Career Compass?", "Career Compass is a career guidance and coaching platform that helps you understand your current skills, choose a next milestone, and track progress toward career goals."],
+    ["Is this a learning platform?", "Not primarily. We focus on guidance, assessment, roadmaps, feedback, and coaching. You may use learning resources from other platforms while organizing your progress here."],
+    ["How does the AI assessment work?", "It evaluates answers and available evidence against a defined skill framework. The result should explain strengths, gaps, and uncertainty. AI results can be wrong and may need human review."],
+    ["Will it guarantee me a job?", "No. The platform can help you prepare, build evidence, and improve your job-search process, but employment depends on many factors outside our control."],
+    ["Do I need to pay to get started?", "The planned model includes a free starting assessment and optional paid guidance. Final features and pricing will be displayed clearly before launch."],
+    ["Can I choose my coach?", "Where coaching is available, you can review profiles, specialties, formats, availability, and prices before submitting a request."],
+    ["What if I disagree with my assessment?", "You should be able to request a review, submit additional evidence, or ask for an explanation. The final process must be implemented and staffed before this promise is published."],
+    ["Is my data private?", "The platform should collect only necessary data, protect evidence, limit access, and publish a clear privacy policy. Read the final policy for exact retention and provider-sharing details."],
+    ["Can teenagers use the platform?", "Availability for minors depends on the final age policy, local legal requirements, consent process, coach safeguards, and safety features. Do not accept minors until these controls are ready."]
+  ];
+  const sample = sampleProfile();
+  return siteHeader() + '<div id="top"></div>' +
+    '<section class="hero">' + contours() + '<div class="container"><div class="copy"><span class="mono">Your next step starts here</span>' +
+    '<h1>Know your skills. Find your direction. Move forward with confidence.</h1>' +
+    '<p class="lede">Career Compass helps you understand what you can do today, discover what to improve next, and get personalized guidance from AI and human coaches as you work toward your career goals.</p>' +
+    '<fieldset class="bearings"><legend class="mono">Set your bearing: what best describes you right now?</legend>' +
+    BEARINGS.map((x, i) => '<label class="bearing' + (i === S.bearing ? " on" : "") + '" for="br' + i + '"><input type="radio" name="bearing" id="br' + i + '" data-act="bearing" data-i="' + i + '"' + (i === S.bearing ? " checked" : "") + '><span>' + x.label + '</span><span class="mono deg">' + String(x.deg).padStart(3, "0") + "&deg;</span></label>").join("") + "</fieldset>" +
+    '<div class="row"><button class="btn" data-act="start">Start my skill assessment</button><button class="btn ghost" data-act="scroll" data-id="how">See how it works</button></div>' +
+    '<p class="muted">Start by understanding your skills. No job guarantees. No pressure to have everything figured out.</p></div>' +
+    '<div class="compasswrap">' + compassSVG(b.deg) + '<p class="mono" id="brtext" aria-live="polite">Bearing ' + String(b.deg).padStart(3, "0") + "&deg; &middot; " + esc(b.label.replace(/\.$/, "")) + "</p></div></div></section>" +
+
+    '<div class="container">' +
+    '<section class="section"><div class="head"><span class="mono">The problem</span><h2>Learning resources are everywhere. A clear direction isn\'t.</h2><p>You can find tutorials, courses, videos, and advice almost anywhere. But knowing which skill to work on, how good you are at it, and whether you\'re making progress can be much harder. Career Compass helps you turn uncertainty into a practical plan.</p></div>' +
+    '<div class="grid"><div class="cardx"><h3>Know where you stand</h3><p>Understand your strengths and gaps through structured skill assessments.</p></div><div class="cardx"><h3>Know what comes next</h3><p>Get a prioritized roadmap based on your goals and current evidence.</p></div><div class="cardx"><h3>Get help when you need it</h3><p>Work with a human coach for feedback, accountability, and direction.</p></div></div></section>' +
+
+    '<section class="section" id="how"><div class="head"><span class="mono">How it works</span><h2>A clearer path in four steps.</h2></div><ol class="steps4">' +
+    [["Discover your current skills", "Answer questions and complete relevant practical tasks."], ["Understand your results", "Review your skill profile, evidence, and improvement areas."], ["Choose your next milestone", "Follow a manageable action plan instead of trying to do everything at once."], ["Get guided and grow", "Connect with a coach, share your work, and review your progress."]].map(s => "<li><h3>" + s[0] + "</h3><p>" + s[1] + "</p></li>").join("") +
+    '</ol><div style="margin-top:22px"><button class="btn" data-act="start">Find my next step</button></div></section>' +
+
+    '<section class="section"><div class="head"><span class="mono">Guidance, not a course library</span><h2>You don\'t need another endless list of things to learn.</h2><p>Career Compass is designed to help you decide what matters next. We connect skill assessment, practical milestones, feedback, and human guidance in one place. You can use resources from different platforms while keeping your goals and progress organized here.</p></div></section>' +
+
+    '<section class="section" id="tracks"><div class="head"><span class="mono">Skill tracks</span><h2>Understand your skills with more than a guess.</h2><p>Our assessment experience uses structured questions, practical evidence, and AI-assisted evaluation to help you understand your current skill level. Results explain strengths, gaps, and recommended next steps. AI can make mistakes, so uncertain or disputed results may need more evidence or human review.</p></div>' +
+    '<div class="grid wide"><div class="cardx radarbox"><div class="row between"><h3>Sample skill profile</h3><span class="pill demo">Sample data</span></div>' + radar(sample) + '<p class="muted" style="margin-top:10px">Solid shape: what answers demonstrated. Dashed line: what the learner felt confident about. Hatched rings: levels that need reviewed work.</p></div>' +
+    '<div class="cardx stack"><h3>First track: web development and digital skills</h3><p>We start with one track so the framework can be reviewed properly before more are added.</p><ul class="tick">' + SKILLS.map(s => "<li>" + s.name + "</li>").join("") + '</ul><p class="muted">Disclosure: assessment quality depends on the skill framework, tasks, and evidence provided. Results are guidance, not a guarantee of employment or professional certification.</p><div><button class="btn ghost" data-act="start">Explore the assessment</button></div></div></div></section>' +
+
+    '<section class="section"><div class="head"><span class="mono">Your dashboard</span><h2>See your progress—not just a score.</h2><p>Your personal dashboard brings your skill profile, active milestones, submitted work, and feedback together. You\'ll know what you\'ve completed, what still needs attention, and which next step is most useful.</p></div></section>' +
+
+    '<section class="section" id="coaching"><div class="head"><span class="mono">Coaching</span><h2>AI can help you plan. A human coach can help you grow.</h2><p>Choose a coach whose experience and approach fit your goals. Get feedback on your work, discuss obstacles, and agree on realistic next steps. You stay in control of your journey.</p></div><div class="row"><button class="btn" data-act="start">Explore coaches</button></div><p class="muted" style="margin-top:12px">Coach availability, credentials, session formats, and prices will be shown clearly. Verification status will be described accurately.</p></section>' +
+
+    '<section class="section"><div class="head"><span class="mono">Progress</span><h2>Progress is built one milestone at a time.</h2><p>You don\'t have to solve your whole future today. Focus on one meaningful task, produce evidence of what you\'ve learned, receive feedback, and use that experience to decide what comes next.</p></div></section>' +
+
+    '<section class="section" id="pricing"><div class="head"><span class="mono">Pricing</span><h2>Start free. Add guidance when you\'re ready.</h2><p>Begin by understanding your current skills. Choose additional support only when it fits your goals and budget.</p></div><div class="plans">' + planCards(false) + '</div><p class="muted" style="margin-top:14px">Plan features, session limits, renewal terms, taxes, and cancellation rules will be shown before checkout. Prices are not published until the cost model and delivery capacity have been validated.</p></section>' +
+
+    '<section class="section" id="trust"><div class="head"><span class="mono">Safety and trust</span><h2>Your growth deserves a trustworthy space.</h2><p>We aim to make guidance transparent, respectful, and useful. You\'ll be able to understand how your assessment is used, what its limitations are, what a subscription includes, and how to ask for help or challenge a result.</p></div>' +
+    '<div class="grid"><div class="cardx"><h4>In this prototype</h4><ul class="tick"><li>Demo assessments are labelled as demo everywhere</li><li>Coach requests are never shown as confirmed bookings</li><li>Nothing leaves your browser</li></ul></div><div class="cardx"><h4>Planned, only once implemented</h4><ul class="tick"><li>Transparent pricing and cancellation</li><li>Verified coach information</li><li>Private evidence storage</li><li>Assessment review and appeal process</li><li>Clear safety and reporting procedures</li></ul></div></div></section>' +
+
+    '<section class="section" id="faq"><div class="head"><h2>Questions, answered plainly.</h2></div>' + faqs.map(f => '<details class="faq"><summary>' + f[0] + "</summary><p>" + f[1] + "</p></details>").join("") + "</section>" +
+
+    '<section class="section"><div class="banner"><h2>You don\'t need to have everything figured out.</h2><p>You just need a useful next step—and a way to keep moving.</p><button class="btn" data-act="start">Start my skill assessment</button></div></section>' +
+
+    '<footer class="foot"><p>Career Compass helps people understand their skills, choose practical next steps, and access structured career guidance. It does not guarantee employment or replace professional judgment.</p><div class="flinks">' +
+    ["How it works", "Skill tracks", "Coaches", "Pricing", "FAQ", "Contact", "Privacy policy", "Terms of service", "Cancellation and refund policy", "Safety and reporting"].map(l => '<button class="linkbtn" data-act="footlink" data-l="' + l + '">' + l + "</button>").join("") + "</div></footer></div>";
+}
+function planCards(app) {
+  const P = [["Discover", "Free plan", ["Initial assessment", "Skill profile", "Recommended next milestone"]], ["Guided", "Paid plan", ["Progress tracking", "Personalized roadmap updates", "Defined AI-guided reviews", "Coaching access as specified in the plan"]], ["Mentored", "Premium plan", ["Scheduled one-to-one coaching", "Portfolio and project feedback", "Interview practice and career planning"]]];
+  return P.map(p => '<div class="cardx stack"><span class="mono">' + p[1] + "</span><h3>" + p[0] + '</h3><ul class="tick">' + p[2].map(f => "<li>" + f + "</li>").join("") + "</ul>" +
+    (app ? (p[0] === "Discover" ? '<span class="pill ok">Your current plan</span>' : '<button class="btn ghost sm" data-act="checkout" data-p="' + p[0] + '">Choose ' + p[0] + " (demo)</button>") : "") + "</div>").join("");
+}
+function sampleProfile() {
+  const lv = [3, 2, 2, 2, 1, 2, 2, 1], se = [4, 3, 3, 3, 2, 2, 3, 2];
+  return { skillScores: SKILLS.map((s, i) => ({ skillId: s.id, level: lv[i], self: se[i] })) };
+}
+
+/* ---------- onboarding ---------- */
+function viewOnboarding() {
+  const steps = [
+    { key: "situation", q: "What best describes you right now?", opts: BEARINGS.map(b => [b.key, b.label]) },
+    { key: "help", q: "What would you like help with first?", opts: HELP },
+    { key: "hours", q: "How much time can you realistically spend each week?", opts: HOURS },
+    { key: "about" }
+  ];
+  const st = steps[S.obStep], last = S.obStep === 3;
+  let body;
+  if (!last) {
+    body = '<fieldset class="stack" style="border:0;padding:0;margin:0"><legend><h2>' + st.q + "</h2></legend>" + st.opts.map(o => '<label class="opt' + (S.user[st.key] === o[0] ? " on" : "") + '" for="ob-' + o[0] + '"><input type="radio" id="ob-' + o[0] + '" name="' + st.key + '" data-act="ob-pick" data-k="' + st.key + '" data-v="' + o[0] + '"' + (S.user[st.key] === o[0] ? " checked" : "") + "><span>" + o[1] + "</span></label>").join("") + "</fieldset>";
+  } else {
+    body = '<div class="stack"><h2>A few last details</h2>' +
+      '<label class="f" for="u-name">Your first name (optional)<input type="text" id="u-name" data-bind="user.name" value="' + esc(S.user.name) + '" autocomplete="off"></label>' +
+      '<label class="f" for="u-lang">Preferred language<select id="u-lang" data-bind="user.lang">' + ["English", "Bangla", "Other"].map(l => "<option" + (S.user.lang === l ? " selected" : "") + ">" + l + "</option>").join("") + "</select></label>" +
+      '<label class="opt" for="u-adult"><input type="checkbox" id="u-adult" data-bind="user.adult"' + (S.user.adult ? " checked" : "") + '><span>I am 18 or older. We are not accepting younger learners yet, because the safeguards for them are not ready.</span></label>' +
+      '<label class="opt" for="u-consent"><input type="checkbox" id="u-consent" data-bind="user.consent"' + (S.user.consent ? " checked" : "") + '><span>I have read the privacy note below.</span></label>' +
+      '<p class="notice info">Privacy note: your answers help personalize your guidance. Only share information you are comfortable providing. In this prototype everything stays in your browser, and nothing is sent to a server.</p></div>';
+  }
+  return '<div class="container" style="max-width:720px;padding-top:36px"><div class="stack">' +
+    '<div class="row between"><button class="brand" data-act="home">' + logo() + "Career Compass</button><span class=\"mono\">Step " + (S.obStep + 1) + " of 4</span></div>" +
+    '<div><span class="mono">Welcome</span><h1 style="font-size:clamp(1.8rem,5vw,2.6rem);margin-top:6px">Let\'s find a direction that fits you.</h1></div>' +
+    '<div class="cardx flat row between"><div><span class="mono">Career track</span><p><b>Web development and digital skills</b></p></div><span class="pill">First track</span></div>' +
+    body + '<div class="err" role="alert">' + esc(S.obErr) + '</div>' +
+    '<div class="row">' + (S.obStep > 0 ? '<button class="btn ghost" data-act="ob-back">Back</button>' : '<button class="btn ghost" data-act="home">Cancel</button>') +
+    '<button class="btn" data-act="ob-next">' + (last ? "Build my starting point" : "Continue") + "</button></div></div></div>";
+}
+
+/* ---------- assessment ---------- */
+const A_STEPS = ["Getting started", "Skill questions", "Practical task", "Review"];
+function viewAssess() {
+  const d = S.draft;
+  const prog = '<ol class="progress" aria-label="Assessment progress">' + A_STEPS.map((s, i) => '<li class="' + (i === d.step ? "on" : i < d.step ? "done" : "") + '"' + (i === d.step ? ' aria-current="step"' : "") + ">" + s + "</li>").join("") + "</ol>";
+  let body = "";
+  if (S.processing) {
+    body = '<div class="cardx row" role="status"><div class="spin"></div><p>We\'re reviewing your responses against the selected skill framework. This may take a moment.</p></div>';
+  } else if (d.step === 0) {
+    body = '<div class="stack"><h2>Let\'s understand what you can do today.</h2><p>This is not a test of your worth or potential. It helps us identify what you already understand and what could be your next useful step.</p>' +
+      '<div class="notice"><b>Demo assessment.</b> It has not been evaluated by a live AI provider and should not be treated as a real skill evaluation.</div>' +
+      '<div class="grid"><div class="cardx"><h4>What will be evaluated</h4><ul class="tick"><li>Six skill questions</li><li>One short practical task</li><li>An optional portfolio link</li></ul></div><div class="cardx"><h4>About 15 minutes</h4><p>You can save and pause. Answer honestly. If you\'re unsure, it\'s okay to say so.</p></div><div class="cardx"><h4>Confidence is separate</h4><p>You can rate how confident you feel. We show that apart from what your answers demonstrate.</p></div></div>' +
+      '<div class="row"><button class="btn" data-act="a-next">Begin</button>' + (S.saved ? '<button class="btn ghost" data-act="a-resume">Resume saved draft</button>' : "") + "</div></div>";
+  } else if (d.step === 1) {
+    body = '<div class="stack"><h2>Skill questions</h2>' + QUESTIONS.map((q, qi) => {
+      const sel = d.answers[q.id];
+      const opts = q.options.map((o, i) => ({ o, i })).concat([{ o: { t: "I'm not sure." }, i: "unsure" }]);
+      return '<fieldset class="cardx stack" style="margin:0"><legend class="mono" style="padding:0 6px">' + skillName(q.skill) + "</legend><h3>" + (qi + 1) + ". " + esc(q.prompt) + "</h3>" + (q.code ? '<pre class="code">' + esc(q.code) + "</pre>" : "") +
+        opts.map(x => '<label class="opt' + (String(sel) === String(x.i) ? " on" : "") + '" for="' + q.id + "-" + x.i + '"><input type="radio" id="' + q.id + "-" + x.i + '" name="' + q.id + '" data-act="ans" data-q="' + q.id + '" data-v="' + x.i + '"' + (String(sel) === String(x.i) ? " checked" : "") + "><span>" + esc(x.o.t) + "</span></label>").join("") +
+        '<div class="conf" role="radiogroup" aria-label="How confident do you feel about ' + esc(skillName(q.skill)) + '?"><span class="muted">Confidence (optional):</span>' + [1, 2, 3, 4, 5].map(v => '<label class="' + (d.conf[q.skill] === v ? "on" : "") + '" for="cf-' + q.skill + "-" + v + '"><input type="radio" id="cf-' + q.skill + "-" + v + '" name="cf-' + q.skill + '" data-act="conf" data-s="' + q.skill + '" data-v="' + v + '"' + (d.conf[q.skill] === v ? " checked" : "") + ">" + v + "</label>").join("") + '<span class="muted">1 = low, 5 = high</span></div></fieldset>';
+    }).join("") + "</div>";
+  } else if (d.step === 2) {
+    body = '<div class="stack"><h2>Practical task</h2><div class="cardx stack"><h3>Plan a one-page portfolio</h3><p>You are a junior developer building a one-page portfolio. Describe the sections you would include, how you would structure the HTML and CSS, how you would check it on a phone, and how you would track the work.</p>' +
+      '<label class="f" for="practical">Your answer<textarea id="practical" data-bind="draft.practical" data-count="pcount" placeholder="Start with the goal of the page, then the sections, then how you would build and check it…"' + (d.skip ? " disabled" : "") + ">" + esc(d.practical) + '</textarea></label><span class="muted" id="pcount">' + words(d.practical) + " words (aim for 25 or more)</span>" +
+      '<label class="f" for="link">Portfolio or project link (optional)<input type="url" id="link" data-bind="draft.link" value="' + esc(d.link) + '" placeholder="https://"></label><p class="muted">Do not share private credentials or passwords. In this demo the link is recorded but never opened.</p>' +
+      '<div class="conf" role="radiogroup" aria-label="Confidence in planning"><span class="muted">Confidence in planning (optional):</span>' + [1, 2, 3, 4, 5].map(v => '<label class="' + (d.conf.plan === v ? "on" : "") + '" for="cf-plan-' + v + '"><input type="radio" id="cf-plan-' + v + '" name="cf-plan" data-act="conf" data-s="plan" data-v="' + v + '"' + (d.conf.plan === v ? " checked" : "") + ">" + v + "</label>").join("") + "</div>" +
+      '<div class="conf" role="radiogroup" aria-label="Confidence in portfolio presentation"><span class="muted">Confidence presenting a portfolio (optional):</span>' + [1, 2, 3, 4, 5].map(v => '<label class="' + (d.conf.portfolio === v ? "on" : "") + '" for="cf-portfolio-' + v + '"><input type="radio" id="cf-portfolio-' + v + '" name="cf-portfolio" data-act="conf" data-s="portfolio" data-v="' + v + '"' + (d.conf.portfolio === v ? " checked" : "") + ">" + v + "</label>").join("") + "</div>" +
+      '<label class="opt" for="skip"><input type="checkbox" id="skip" data-bind="draft.skip" data-rerender="1"' + (d.skip ? " checked" : "") + "><span>Skip the practical task for now. Planning and portfolio will show no level.</span></label></div>" +
+      '<div class="fill-sample"><button class="linkbtn" data-act="fill-sample">Fill with sample answers (test data)</button></div></div>';
+  } else {
+    const answered = QUESTIONS.filter(q => d.answers[q.id] !== undefined).length;
+    body = '<div class="stack"><h2>Review</h2><div class="cardx stack"><div class="row between"><span>Skill questions answered</span><b>' + answered + " of 6</b></div><div class=\"row between\"><span>Practical task</span><b>" + (d.skip ? "Skipped" : words(d.practical) + " words") + "</b></div><div class=\"row between\"><span>Portfolio link</span><b>" + (d.link.trim() ? "Provided (not opened)" : "None") + "</b></div></div>" +
+      '<p class="notice">Demo assessment. A simple rule-based sample evaluator will score this. It is not a live AI provider.</p></div>';
+  }
+  const nav = S.processing ? "" : '<div class="err" role="alert">' + esc(S.aErr) + '</div><div class="row">' + (d.step > 0 ? '<button class="btn ghost" data-act="a-back">Back</button>' : '<button class="btn ghost" data-act="home">Leave</button>') +
+    (d.step > 0 ? '<button class="btn ghost" data-act="a-save">Save and pause</button>' : "") +
+    (d.step === 3 ? '<button class="btn" data-act="a-submit">Evaluate my assessment</button>' : d.step > 0 ? '<button class="btn" data-act="a-next">Continue</button>' : "") + "</div>";
+  return '<div class="container" style="max-width:780px;padding-top:32px"><div class="stack"><div class="row between"><button class="brand" data-act="home">' + logo() + "Career Compass</button>" + prog + "</div>" + body + nav + "</div></div>";
+}
+
+/* ---------- app shell ---------- */
+const TABS = [["dashboard", "Dashboard"], ["roadmap", "My roadmap"], ["profile", "Skill profile"], ["coaches", "Coaches"], ["reviews", "Reviews and feedback"], ["billing", "Subscription"], ["settings", "Settings"]];
+function viewApp() {
+  const initials = (S.user.name || "You").trim().slice(0, 2).toUpperCase();
+  const bell = '<div class="bell"><button class="themebtn" data-act="bell" aria-expanded="' + S.bell + '">Notifications' + (S.events.length ? " (" + S.events.length + ")" : "") + "</button>" + (S.bell ? '<div class="cardx drop stack"><b>Notifications</b>' + (S.events.length ? S.events.slice(0, 6).map(e => "<p>" + esc(e.text) + '<br><span class="muted">' + fmtDate(e.at) + "</span></p>").join("") : '<p class="muted">Nothing yet. Updates from your activity will appear here.</p>') + "</div>" : "") + "</div>";
+  const demo = S.result ? '<div class="notice"><span class="pill demo">Demo mode</span> Results come from a rule-based sample evaluator, not a live AI provider. Nothing is stored on a server.</div>' : "";
+  let content = "";
+  switch (S.tab) { case "dashboard": content = tabDashboard(); break; case "roadmap": content = tabRoadmap(); break; case "profile": content = tabProfile(); break; case "coaches": content = tabCoaches(); break; case "reviews": content = tabReviews(); break; case "billing": content = tabBilling(); break; default: content = tabSettings(); }
+  return '<header class="appbar"><div class="container"><button class="brand" data-act="home">' + logo() + 'Career Compass</button><div class="row">' + bell + '<button class="themebtn" data-act="theme">Theme</button><button class="themebtn" data-act="tab" data-t="settings" aria-label="Profile and settings">' + esc(initials) + "</button></div></div></header>" +
+    '<div class="container shell"><nav class="side" aria-label="App">' + TABS.map(t => '<button class="' + (S.tab === t[0] ? "on" : "") + '" data-act="tab" data-t="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + "</button>").join("") + '</nav><main class="main">' + demo + content + "</main></div>";
+}
+function noResult(msg) {
+  return '<div class="cardx empty"><h2>Your starting point is waiting to be discovered.</h2><p>' + msg + '</p><button class="btn" data-act="begin-assess">Complete your first assessment</button></div>';
+}
+function tabDashboard() {
+  const r = S.result;
+  const head = '<div><span class="mono">Dashboard</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Welcome back' + (S.user.name ? ", " + esc(S.user.name) : "") + "</h1>" + (r ? "<p>Your next milestone is within reach.</p>" : "") + "</div>";
+  if (!r) return head + noResult("Complete your first assessment to get a personalized skill profile.");
+  const next = S.plan.milestones[0];
+  const ev = new Set(); r.skillScores.forEach(s => s.evidenceIds.forEach(e => ev.add(e)));
+  const L = LEVELS[r.overallLevel];
+  const bars = r.skillScores.map(s => '<div class="sk"><span>' + skillName(s.skillId) + '</span><div class="track" aria-hidden="true"><div class="zone"></div>' + (s.level ? '<i style="width:' + (s.level / 5 * 100) + '%"></i>' : "") + (s.self ? '<u style="left:calc(' + (s.self / 5 * 100) + '% - 1px)"></u>' : "") + '</div><span class="mono">' + (s.level ? "L" + s.level + " &middot; " + s.confidence : "No evidence") + "</span></div>").join("");
+  const hist = S.events.length ? S.events.slice(0, 5).map(e => '<li><span class="mono">' + fmtDate(e.at) + "</span> " + esc(e.text) + "</li>").join("") : "<li class=\"muted\">No progress yet. Choose one small milestone and begin.</li>";
+  return head + '<div class="kpis"><div class="kpi"><span class="mono">Current level</span><b>Level ' + r.overallLevel + "</b><span>" + L.name + '</span></div><div class="kpi"><span class="mono">Next milestone</span><b style="font-size:1.1rem">' + esc(next.title) + '</b><span>About ' + next.estimatedHours + ' hours (estimate)</span></div><div class="kpi"><span class="mono">Evidence used</span><b>' + ev.size + '</b><span>' + (r.status === "needs_human_review" ? "Human review recommended" : "No review flag") + "</span></div></div>" +
+    '<div class="cardx stack"><div class="row between"><h3>Your skill profile</h3><span class="pill demo">Demo result</span></div>' + bars + '<p class="muted">Filled bar: demonstrated level. Blue tick: your self-rated confidence. Hatched area: levels that need reviewed work.</p><div><button class="btn ghost sm" data-act="tab" data-t="profile">See the full profile</button></div></div>' +
+    '<div class="grid wide"><div class="cardx stack"><span class="mono">Your next best step</span><h3>' + esc(next.title) + "</h3><p>" + esc(next.whyItMatters) + '</p><div><button class="btn" data-act="open-ms" data-id="' + next.id + '">View milestone</button></div></div>' +
+    '<div class="cardx stack"><span class="mono">Your human coach</span><h3>Add human feedback</h3><p>A coach can review your work and help you decide what to do next.</p><div><button class="btn ghost" data-act="tab" data-t="coaches">Explore coaches</button></div></div></div>' +
+    '<div class="cardx stack"><h3>Progress history</h3><ul class="stack" style="list-style:none;padding:0;margin:0">' + hist + "</ul></div>";
+}
+function tabProfile() {
+  const r = S.result;
+  if (!r) return "<h1 style=\"font-size:2rem\">Skill profile</h1>" + noResult("Your profile appears after your first assessment.");
+  const L = LEVELS[r.overallLevel];
+  const rows = r.skillScores.map(s => '<div class="cardx stack"><div class="row between"><h4>' + skillName(s.skillId) + "</h4><span class=\"row\">" + (s.level ? '<span class="pill">Level ' + s.level + " &middot; " + LEVELS[s.level].name + "</span>" : '<span class="pill">No evidence yet</span>') + '<span class="pill">Confidence: ' + s.confidence + "</span></span></div>" +
+    '<p class="muted">Evidence used: ' + (s.evidenceIds.length ? s.evidenceIds.join(", ") : "none") + (s.self ? " &middot; You rated your confidence " + s.self + " of 5" : "") + "</p>" +
+    (s.level && s.level >= 2 ? "<p><b>Demonstrated:</b> " + SKILL_TEXT[s.skillId][0] + "</p>" : "") + (s.level !== null && s.level < MAX_LEVEL ? "<p><b>To show next:</b> " + SKILL_TEXT[s.skillId][1] + "</p>" : "") + (s.note ? '<p class="muted">' + esc(s.note) + "</p>" : "") + "</div>").join("");
+  const next = MILESTONES[r.recommendedNextMilestoneId];
+  return '<div><span class="mono">Assessed ' + fmtDate(r.createdAt) + " &middot; Web development and digital skills &middot; Rubric " + r.rubricVersion + '</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:6px">Here\'s your current starting point.</h1><p style="margin-top:8px">These results reflect the answers and evidence available in this assessment. They are a guide for your next steps, not a judgment of your potential.</p></div>' +
+    '<div class="row"><span class="pill demo">Mode: demo</span><span class="pill">' + (r.status === "needs_human_review" ? "Human review recommended" : "Completed") + "</span></div>" +
+    '<div class="grid wide"><div class="cardx radarbox">' + radar(r) + '<p class="muted" style="margin-top:8px">Solid shape: demonstrated. Dashed: your confidence. Hatched rings: need reviewed work.</p></div>' +
+    '<div class="cardx stack"><span class="mono">Overall estimate</span><h2>Level ' + r.overallLevel + " &middot; " + L.name + "</h2><p>" + L.meaning + ".</p><p class=\"muted\">Example evidence at this level: " + L.evidence + ".</p><p class=\"notice info\">The scale runs to Level 5, but this assessment cannot assign Levels 4 or 5. They need reviewed work samples.</p></div></div>" +
+    '<div class="grid wide"><div class="cardx stack"><h3>What you already demonstrate</h3>' + (r.topStrengths.length ? '<ul class="tick">' + r.topStrengths.map(id => "<li><b>" + skillName(id) + ":</b> " + SKILL_TEXT[id][0] + " (" + r.skillScores.find(s => s.skillId === id).evidenceIds.join(", ") + ")</li>").join("") + "</ul>" : "<p>No skill reached Level 2 yet. That is a normal place to start.</p>") + "</div>" +
+    '<div class="cardx stack"><h3>What to strengthen next</h3>' + (r.priorityGaps.length ? '<ul class="tick">' + r.priorityGaps.map(id => "<li><b>" + skillName(id) + ":</b> " + SKILL_TEXT[id][1] + "</li>").join("") + "</ul>" : "<p>No priority gaps at this level.</p>") + "</div></div>" +
+    '<div class="cardx stack"><h3>What we still need to understand</h3><ul class="tick">' + r.uncertainty.map(u => "<li>" + esc(u) + "</li>").join("") + "</ul></div>" +
+    '<div class="cardx stack"><h3>Evidence used</h3><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:420px"><tbody>' + r.evidence.map(e => '<tr><td class="mono" style="padding:6px 10px 6px 0">' + e.id + '</td><td style="padding:6px 10px 6px 0">' + e.type + "</td><td class=\"muted\">" + esc(e.detail) + "</td></tr>").join("") + "</tbody></table></div></div>" +
+    '<div class="cardx stack"><h3>Limitations</h3><ul class="tick">' + r.limitations.map(l => "<li>" + l + "</li>").join("") + "</ul></div>" +
+    '<div class="cardx stack"><span class="mono">Your recommended next milestone</span><h3>' + next.title + "</h3><p>" + next.why + '</p><div class="row"><button class="btn" data-act="tab" data-t="roadmap">View my roadmap</button><button class="btn ghost" data-act="ask-review">Ask for a human review</button><button class="btn ghost" data-act="tab" data-t="reviews">Report an error</button></div></div>' +
+    '<h3>Skill by skill</h3><div class="stack">' + rows + '</div><div class="row"><button class="btn ghost" data-act="retake">Retake the assessment</button></div>';
+}
+function tabRoadmap() {
+  if (!S.plan) return "<h1 style=\"font-size:2rem\">My roadmap</h1><div class=\"cardx empty\"><h2>Your roadmap will appear after your assessment has been reviewed.</h2><button class=\"btn\" data-act=\"begin-assess\">Start my skill assessment</button></div>";
+  const p = S.plan;
+  const items = p.milestones.map((m, mi) => {
+    const open = S.openMs === m.id, done = m.tasks.filter(t => S.tasks[t.id]).length;
+    return '<li class="stop ' + m.status + '"><div class="row between"><div><span class="mono">Milestone ' + (mi + 1) + " &middot; " + STATUS_LABEL[m.status] + "</span><h3>" + m.title + '</h3></div><button class="btn ghost sm" data-act="open-ms" data-toggle="1" data-id="' + m.id + '" aria-expanded="' + open + '">' + (open ? "Hide details" : "Details") + "</button></div><p>" + m.whyItMatters + '</p><p class="muted">Skills: ' + m.targetSkills.map(skillName).join(", ") + " &middot; About " + m.estimatedHours + " hours (estimate) &middot; " + done + " of " + m.tasks.length + " tasks done</p>" +
+      (open ? '<div class="cardx stack" style="margin-top:12px"><h4>Tasks</h4>' + m.tasks.map(t => '<label class="task" for="' + t.id + '"><input type="checkbox" id="' + t.id + '" data-act="task" data-id="' + t.id + '"' + (S.tasks[t.id] ? " checked" : "") + (m.status === "submitted" ? " disabled" : "") + '><span><b>' + t.title + "</b><br>" + t.instructions + '<br><span class="muted">Evidence: ' + t.evidenceRequired + "</span></span></label>").join("") +
+        "<h4>Completion criteria</h4><ul class=\"tick\">" + m.completionCriteria.map(c => "<li>" + c + "</li>").join("") + "</ul>" +
+        "<p class=\"muted\">Resources: none added in this prototype. Use any suitable online or offline resource, or ask a coach.</p>" +
+        '<label class="f" for="ev-' + m.id + '">Your evidence (a link or a short description)<textarea id="ev-' + m.id + '" data-bind="evidence.' + m.id + '"' + (m.status === "submitted" ? " disabled" : "") + ">" + esc(S.evidence[m.id] || "") + '</textarea></label><div class="err" role="alert">' + esc(S.msErr[m.id] || "") + "</div>" +
+        '<div class="row">' + (m.status === "not_started" ? '<button class="btn" data-act="ms-start" data-id="' + m.id + '">Start milestone</button>' : m.status === "in_progress" ? '<button class="btn" data-act="ms-submit" data-id="' + m.id + '">Submit for review</button>' : m.status === "submitted" ? '<button class="btn ghost" data-act="ms-withdraw" data-id="' + m.id + '">Withdraw submission</button>' : "") + '<button class="btn ghost" data-act="tab" data-t="coaches">Ask a coach to review</button></div>' +
+        (m.status === "submitted" ? '<p class="notice">Demo only: your work was not sent to anyone. Needs revision and Completed are set only after a real review.</p>' : "") + "</div>" : "") + "</li>";
+  }).join("");
+  return '<div><span class="mono">My roadmap</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Progress is built one milestone at a time.</h1></div>' +
+    '<div class="cardx stack"><p><b>' + p.milestones.length + ' milestones, about ' + p.totalHours + ' hours in total.</b> At your weekly time that is roughly ' + p.approxWeeks + ' week' + (p.approxWeeks > 1 ? "s" : "") + '. These are estimates, not promises.</p>' + (p.reviewRecommended ? '<p class="notice">Your assessment was flagged for human review. Consider asking a coach to check this plan before you rely on it.</p>' : "") + "</div>" +
+    '<ol class="trail">' + items + "</ol>";
+}
+function tabCoaches() {
+  const matches = matchCoaches(S.user, S.result, S.filters);
+  const sel = (id, k, opts) => '<label class="f" for="' + id + '">' + { ff: "Session format", fl: "Language", fs: "Skill focus" }[id] + '<select id="' + id + '" data-bind="filters.' + k + '" data-rerender="1">' + opts.map(o => '<option value="' + o[0] + '"' + (S.filters[k] === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select></label>";
+  const reqs = S.requests.length ? S.requests.map(r => '<div class="cardx stack"><div class="row between"><b>' + esc(r.coach) + '</b><span class="pill demo">' + (r.status === "cancelled" ? "Cancelled" : "Pending (demo)") + '</span></div><p class="muted">' + FORMAT_LABEL[r.type] + " &middot; " + (r.slots.join(", ") || "No slots chosen") + "</p><p>" + esc(r.goal) + "</p><p class=\"muted\">Demo only: no real coach has been contacted or booked. This is not a confirmed session.</p>" + (r.status !== "cancelled" ? '<div><button class="btn ghost sm" data-act="req-cancel" data-id="' + r.id + '">Cancel request</button></div>' : "") + "</div>").join("") : '<p class="muted">You can explore coaches whenever you\'re ready for human guidance.</p>';
+  return '<div><span class="mono">Coaches</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Find guidance that fits your goal.</h1><p style="margin-top:8px">Tell the coach what you\'re working toward and what kind of feedback would help. Your request will remain pending until the system confirms the next step.</p></div>' +
+    '<div class="notice"><b>Sample profiles.</b> These coaches are made up for the prototype. None are real, verified, rated or priced.</div>' +
+    '<div class="grid">' + sel("ff", "format", [["any", "Any"], ["video", "Video call"], ["in_person", "In person"], ["async_review", "Written review"]]) + sel("fl", "lang", [["any", "Any"], ["English", "English"], ["Bangla", "Bangla"]]) + sel("fs", "skill", [["any", "Any"]].concat(SKILLS.map(s => [s.id, s.short]))) + "</div>" +
+    (matches.length ? matches.map(m => coachCard(m)).join("") : '<div class="cardx empty"><p>No sample coach matches those filters. Try widening them.</p></div>') +
+    '<h3>My coaching</h3>' + reqs;
+}
+function coachCard(m) {
+  const c = m.coach, open = S.reqOpen === c.id;
+  return '<div class="cardx coach"><div class="row between"><div><h3>' + c.name + '</h3><span class="muted">' + c.headline + '</span></div><span class="pill warn">Not verified (sample)</span></div>' +
+    '<p>' + c.approach + '</p><div class="chips">' + c.skills.map(s => '<span class="chip">' + SKILLS.find(x => x.id === s).short + "</span>").join("") + c.langs.map(l => '<span class="chip">' + l + "</span>").join("") + c.formats.map(f => '<span class="chip">' + FORMAT_LABEL[f] + "</span>").join("") + "</div>" +
+    '<p class="muted">Slots (Asia/Dhaka, UTC+6): ' + c.slots.join(", ") + ". Price: to be confirmed. No reviews yet.</p>" +
+    '<details><summary><b>Why this may fit</b></summary><ul class="tick" style="margin-top:8px">' + m.reasons.map(r => "<li>" + esc(r) + "</li>").join("") + '</ul><p class="muted" style="margin-top:8px">What we don\'t know: ' + m.missing.map(esc).join("; ") + ".</p></details>" +
+    (open ? '<div class="cardx stack" style="background:var(--bg)"><h4>Coaching request</h4><label class="f" for="rq-goal">What would you like help achieving?<textarea id="rq-goal" data-bind="reqForm.goal" placeholder="What would you like help achieving?">' + esc(S.reqForm.goal) + '</textarea></label><div><span class="mono">Preferred time slots</span><div class="chips" style="margin-top:6px">' + c.slots.map((s, i) => '<label class="chip slot' + (S.reqForm.slots.includes(s) ? " on" : "") + '" for="sl-' + i + '"><input type="checkbox" id="sl-' + i + '" data-act="slot" data-s="' + s + '"' + (S.reqForm.slots.includes(s) ? " checked" : "") + ' style="position:absolute;opacity:0">' + s + "</label>").join("") + '</div></div><label class="f" for="rq-type">Session type<select id="rq-type" data-bind="reqForm.type">' + c.formats.map(f => '<option value="' + f + '"' + (S.reqForm.type === f ? " selected" : "") + ">" + FORMAT_LABEL[f] + "</option>").join("") + '</select></label><div class="err" role="alert">' + esc(S.reqErr) + '</div><div class="row"><button class="btn" data-act="req-send" data-id="' + c.id + '">Send coaching request</button><button class="btn ghost" data-act="req-close">Close</button></div></div>' : '<div><button class="btn" data-act="req-open" data-id="' + c.id + '">Request coaching</button></div>') + "</div>";
+}
+function tabReviews() {
+  return '<div><span class="mono">Reviews and feedback</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Where human feedback will appear.</h1></div>' +
+    '<div class="cardx stack"><h3>Coach feedback</h3><p class="muted">No coach has reviewed your work yet. Feedback from a real review will appear here.</p></div>' +
+    '<div class="cardx stack"><h3>Assessment review requests</h3>' + (S.reviews.length ? S.reviews.map(r => '<p>' + fmtDate(r.at) + ' &middot; <span class="pill demo">Recorded in this prototype only</span> No reviewer has been notified.</p>').join("") : '<p class="muted">You have not asked for a review. You can do this from your skill profile.</p>') + '<div><button class="btn ghost sm" data-act="ask-review">Ask for a human review</button></div></div>' +
+    '<div class="cardx stack"><h3>Report an error in your results</h3><label class="f" for="err-text">What looks wrong?<textarea id="err-text" data-bind="errText" placeholder="For example: my answer to question 3 was marked lower than it should be."></textarea></label><div class="row"><button class="btn" data-act="report-error">Send report</button></div>' + (S.errorReports.length ? '<p class="muted">' + S.errorReports.length + " report(s) recorded in this prototype only. No one has been notified.</p>" : "") + "</div>";
+}
+function tabBilling() {
+  return '<div><span class="mono">Subscription</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Start free. Add guidance when you\'re ready.</h1></div>' +
+    '<div class="plans">' + planCards(true) + "</div>" + (S.billingMsg ? '<div class="notice" role="status">' + esc(S.billingMsg) + "</div>" : "") +
+    '<div class="cardx stack"><h3>Before you pay</h3><ul class="tick"><li>Plan features, session limits, renewal terms, taxes, and cancellation rules will be shown before checkout.</li><li>A plan changes only after the payment provider confirms the payment. A success page alone is never proof.</li><li>Billing history: none. You are on the free Discover plan.</li></ul></div>';
+}
+function tabSettings() {
+  const p = S.prefs, u = S.user;
+  const sw = (id, label, bind, on, rr) => '<div class="switch"><label for="' + id + '">' + label + '</label><input type="checkbox" id="' + id + '" data-bind="' + bind + '"' + (on ? " checked" : "") + (rr ? ' data-rerender="1"' : "") + "></div>";
+  const dump = JSON.stringify({ user: { name: u.name, situation: u.situation, hours: u.hours, language: u.lang }, assessment: S.result, plan: S.plan, requests: S.requests }, null, 2);
+  return '<div><span class="mono">Settings</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Notifications, privacy and account</h1></div>' +
+    '<div class="cardx stack"><h3>Notifications</h3>' + sw("n-in", "In-app notifications", "prefs.inapp", p.inapp) + sw("n-em", "Email notifications (not connected in this prototype)", "prefs.email", p.email) +
+    '<label class="f" for="n-freq">How often<select id="n-freq" data-bind="prefs.freq"><option value="milestones"' + (p.freq === "milestones" ? " selected" : "") + '>Only when something needs me</option><option value="weekly"' + (p.freq === "weekly" ? " selected" : "") + '>Weekly summary</option><option value="off"' + (p.freq === "off" ? " selected" : "") + '>Off</option></select></label><label class="f" for="n-quiet">Quiet hours (optional)<input type="text" id="n-quiet" data-bind="prefs.quiet" value="' + esc(p.quiet) + '" placeholder="For example 22:00 to 08:00"></label></div>' +
+    '<div class="cardx stack"><h3>Accessibility</h3>' + sw("a-motion", "Reduce motion", "user.reduceMotion", u.reduceMotion, true) + sw("a-big", "Larger text", "user.bigText", u.bigText, true) + "</div>" +
+    '<div class="cardx stack"><h3>Your data</h3><p>Everything here lives in your browser. Nothing is sent to a server.</p><div class="row"><button class="btn ghost sm" data-act="export">' + (S.exportOpen ? "Hide my data" : "Show my data") + '</button>' + (S.delConfirm ? '<button class="btn sm" style="background:var(--err);border-color:var(--err);color:#fff" data-act="del-yes">Yes, delete everything</button><button class="btn ghost sm" data-act="del-no">Keep my data</button>' : '<button class="btn ghost sm" data-act="del">Delete my data</button>') + "</div>" + (S.exportOpen ? '<pre class="json">' + esc(dump) + "</pre>" : "") + "</div>" +
+    '<div class="cardx stack"><h3>Help and support</h3><p>Real support is not connected in this prototype.</p><div><button class="linkbtn" data-act="footlink" data-l="Safety and reporting">Safety and reporting</button></div></div>';
+}
+
+function view() {
+  switch (S.view) { case "onboarding": return viewOnboarding(); case "assess": return viewAssess(); case "app": return viewApp(); default: return viewSite(); }
+}
+
+/* ---------- engine ---------- */
+function afterRender() {
+  document.documentElement.classList.toggle("bigtext", !!S.user.bigText);
+  document.documentElement.classList.toggle("calm", !!S.user.reduceMotion);
+}
+function render() {
+  const fid = document.activeElement && document.activeElement.id;
+  document.getElementById("app").innerHTML = view();
+  if (fid) { const e = document.getElementById(fid); if (e && e.focus) e.focus({ preventScroll: true }); }
+  afterRender();
+}
+function go(view, tab) { S.view = view; if (tab) S.tab = tab; S.menu = false; S.bell = false; render(); window.scrollTo(0, 0); }
+function setPath(path, val) { const p = path.split("."); let o = S; while (p.length > 1) o = o[p.shift()]; o[p[0]] = val; }
+
+const ACT = {
+  menu() { S.menu = !S.menu; render(); },
+  theme() { const r = document.documentElement; const cur = r.getAttribute("data-theme"); const dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; r.setAttribute("data-theme", dark ? "light" : "dark"); },
+  scroll(d) { S.menu = false; if (S.view !== "site") { go("site"); } else render(); const el = document.getElementById(d.id); if (el) el.scrollIntoView({ behavior: S.user.reduceMotion ? "auto" : "smooth", block: "start" }); else window.scrollTo(0, 0); },
+  signin() { toast("Sign in is not connected in this prototype. Start the assessment to try the full flow."); },
+  footlink(d) { toast(d.l + " is a placeholder here. The real page needs to be written and reviewed before launch."); },
+  bearing(d) {
+    S.bearing = +d.i; S.user.situation = BEARINGS[S.bearing].key;
+    const b = BEARINGS[S.bearing];
+    document.querySelectorAll(".bearing").forEach((l, i) => l.classList.toggle("on", i === S.bearing));
+    const n = document.querySelector(".needle"); if (n) n.style.transform = "rotate(" + b.deg + "deg)";
+    const svg = document.querySelector(".compass"); if (svg) svg.setAttribute("aria-label", "Compass needle pointing to bearing " + b.deg + " degrees");
+    const t = document.getElementById("brtext"); if (t) t.innerHTML = "Bearing " + String(b.deg).padStart(3, "0") + "&deg; &middot; " + esc(b.label.replace(/\.$/, ""));
+  },
+  start() { if (!S.user.situation) S.user.situation = BEARINGS[S.bearing].key; S.obStep = 0; S.obErr = ""; go("onboarding"); },
+  home() { go("site"); },
+  "ob-pick"(d) { S.user[d.k] = d.v; S.obErr = ""; render(); },
+  "ob-back"() { S.obStep = Math.max(0, S.obStep - 1); S.obErr = ""; render(); },
+  "ob-next"() {
+    const keys = ["situation", "help", "hours"];
+    if (S.obStep < 3) { if (!S.user[keys[S.obStep]]) { S.obErr = "Please choose one option to continue."; render(); return; } S.obStep++; S.obErr = ""; render(); window.scrollTo(0, 0); return; }
+    if (!S.user.adult) { S.obErr = "We can only accept learners aged 18 or older right now."; render(); return; }
+    if (!S.user.consent) { S.obErr = "Please confirm you have read the privacy note."; render(); return; }
+    S.draft.step = 0; S.aErr = ""; go("assess");
+  },
+  "a-next"() { if (S.draft.step === 1) { const v = QUESTIONS.filter(q => S.draft.answers[q.id] === undefined); if (v.length) { S.aErr = "Please answer all six skill questions. Choosing \"I'm not sure\" is fine."; render(); return; } } S.aErr = ""; S.draft.step++; render(); window.scrollTo(0, 0); },
+  "a-back"() { S.aErr = ""; S.draft.step = Math.max(0, S.draft.step - 1); render(); window.scrollTo(0, 0); },
+  "a-save"() { try { localStorage.setItem("cc-draft", JSON.stringify({ draft: S.draft, user: S.user })); S.saved = true; toast("Draft saved in this browser. You can resume it later."); } catch (e) { toast("Saving isn't available in this view. Your answers are still on screen."); } },
+  "a-resume"() { if (S.savedDraft) { S.draft = S.savedDraft.draft; S.user = Object.assign(S.user, S.savedDraft.user); } render(); toast("Saved draft restored."); },
+  ans(d) { S.draft.answers[d.q] = d.v === "unsure" ? "unsure" : +d.v; S.aErr = ""; render(); },
+  conf(d) { S.draft.conf[d.s] = +d.v; render(); },
+  "fill-sample"() { S.draft.practical = "My goal is a one-page portfolio for recruiters and hiring managers. First I would sketch an about section, two projects with the goal, what I built and what I learned, and a contact section. Then I would write semantic HTML with one h1, build a responsive grid with CSS, and use Git commits for each section. I would keep a small checklist of tasks, test it on my phone, and ask for feedback before publishing."; S.draft.skip = false; render(); toast("Sample text added. It is test data, not your own work."); },
+  async "a-submit"() {
+    const v = validateDraft(S.draft);
+    if (!v.ok) { S.aErr = v.msg; render(); return; }
+    S.aErr = ""; S.processing = true; render();
+    await new Promise(r => setTimeout(r, S.user.reduceMotion ? 200 : 1100));
+    S.result = scoreAssessment(S.draft, S.user); S.plan = buildLearningPlan(S.result, S.user); S.openMs = null;
+    S.processing = false; S.draft.step = 0; note("Assessment completed (demo mode)."); note("Roadmap created with " + S.plan.milestones.length + " milestones.");
+    try { localStorage.removeItem("cc-draft"); S.saved = false; } catch (e) { }
+    go("app", "profile");
+  },
+  tab(d) { S.tab = d.t; S.bell = false; render(); window.scrollTo(0, 0); },
+  bell() { S.bell = !S.bell; render(); },
+  "begin-assess"() { S.obStep = S.user.adult && S.user.consent ? 3 : 0; if (S.user.adult && S.user.consent) { S.draft.step = 0; go("assess"); } else go("onboarding"); },
+  retake() { S.draft = { step: 0, answers: {}, conf: {}, practical: "", link: "", skip: false }; go("assess"); },
+  "open-ms"(d) { S.tab = "roadmap"; S.openMs = S.openMs === d.id && S.tab === "roadmap" && d.toggle ? null : d.id; render(); },
+  task(d, el) { S.tasks[d.id] = el.checked; render(); },
+  "ms-start"(d) { setMs(d.id, "in_progress"); note("Started a milestone."); },
+  "ms-submit"(d) {
+    const m = S.plan.milestones.find(x => x.id === d.id);
+    if (!m.tasks.some(t => S.tasks[t.id])) { S.msErr[d.id] = "Tick at least one task you completed before submitting."; render(); return; }
+    if (!(S.evidence[d.id] || "").trim()) { S.msErr[d.id] = "Add a link or a short description of your evidence."; render(); return; }
+    S.msErr[d.id] = ""; setMs(d.id, "submitted"); note("Milestone submitted for review (demo: not sent to anyone).");
+  },
+  "ms-withdraw"(d) { setMs(d.id, "in_progress"); },
+  "req-open"(d) { S.reqOpen = d.id; S.reqErr = ""; const c = COACHES.find(x => x.id === d.id); S.reqForm = { goal: "", slots: [], type: c.formats[0] }; render(); },
+  "req-close"() { S.reqOpen = null; render(); },
+  slot(d, el) { const s = S.reqForm.slots; S.reqForm.slots = el.checked ? s.concat(d.s) : s.filter(x => x !== d.s); render(); },
+  "req-send"(d) {
+    if (S.reqForm.goal.trim().length < 10) { S.reqErr = "Tell the coach a little about what you want to achieve (at least 10 characters)."; render(); return; }
+    if (!S.reqForm.slots.length) { S.reqErr = "Choose at least one preferred time slot."; render(); return; }
+    const c = COACHES.find(x => x.id === d.id);
+    S.requests.unshift({ id: "r" + Date.now(), coach: c.name, goal: S.reqForm.goal.trim(), slots: S.reqForm.slots, type: S.reqForm.type, status: "pending" });
+    S.reqOpen = null; note("Coaching request recorded (demo: no coach contacted)."); render(); toast("Demo only: no real coach has been contacted or booked.");
+  },
+  "req-cancel"(d) { const r = S.requests.find(x => x.id === d.id); if (r) r.status = "cancelled"; render(); },
+  "ask-review"() { S.reviews.unshift({ at: new Date().toISOString() }); note("Human review requested (demo: no reviewer notified)."); render(); toast("Recorded in this prototype only. No reviewer has been notified."); },
+  "report-error"() { if (!(S.errText || "").trim()) { toast("Describe what looks wrong first."); return; } S.errorReports.push({ text: S.errText, at: new Date().toISOString() }); S.errText = ""; note("Error report recorded (demo)."); render(); toast("Recorded in this prototype only. No one has been notified."); },
+  checkout(d) { S.billingMsg = "Demo only: no checkout was opened, no payment was taken, and your plan has not changed. A real plan change happens only after the payment provider confirms payment."; render(); },
+  export() { S.exportOpen = !S.exportOpen; render(); },
+  del() { S.delConfirm = true; render(); },
+  "del-no"() { S.delConfirm = false; render(); },
+  "del-yes"() { try { localStorage.removeItem("cc-draft"); } catch (e) { } const th = document.documentElement.getAttribute("data-theme"); S = fresh(); render(); window.scrollTo(0, 0); toast("Your data in this prototype has been deleted."); }
+};
+function setMs(id, status) { S.plan.milestones.find(m => m.id === id).status = status; render(); }
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.tagName === "INPUT") return;
+  const fn = ACT[el.dataset.act]; if (fn) fn(el.dataset, el, e);
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.act && el.tagName === "INPUT") { const fn = ACT[el.dataset.act]; if (fn) fn(el.dataset, el, e); return; }
+  if (el.dataset && el.dataset.bind) { setPath(el.dataset.bind, el.type === "checkbox" ? el.checked : el.value); if (el.dataset.rerender) render(); }
+});
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.bind && el.type !== "checkbox" && el.tagName !== "SELECT") {
+    setPath(el.dataset.bind, el.value);
+    if (el.dataset.count) { const c = document.getElementById(el.dataset.count); if (c) c.textContent = words(el.value) + " words (aim for 25 or more)"; }
+  }
+});
+render();
+</script>
+
+</body></html>
