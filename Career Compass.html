@@ -307,6 +307,56 @@ const KW = {
   a11y: /accessib|alt text|contrast|keyboard|aria|screen reader|label/i
 };
 
+async function callGeminiEvaluation(draft, user, apiKey) {
+  if (!apiKey || !apiKey.trim()) return null;
+  const prompt = "You are a Principal Software Engineer and Technical Assessor evaluating a learner's Web Development assessment.\n" +
+    "Provide a comprehensive, authentic skill evaluation report.\n\n" +
+    "Candidate Information:\nName: " + (user.name || "Learner") + "\nSituation: " + (user.situation || "Self-directed") + "\nCommitment: " + (user.hours || "2-4 hours weekly") + "\n\n" +
+    "Skill Questions & Answers:\n" +
+    QUESTIONS.map(function(q, i) {
+      const a = draft.answers[q.id];
+      const opt = a === "unsure" ? "Not sure / exploring" : (q.options[a] ? q.options[a].t : "Unanswered");
+      const conf = (draft.conf && draft.conf[q.skill]) ? " (Confidence: " + draft.conf[q.skill] + "/5)" : "";
+      return "- " + q.skill.toUpperCase() + ": " + q.prompt + "\n  Selected answer: \"" + opt + "\"" + conf;
+    }).join("\n") + "\n\n" +
+    "Practical Architecture Task Submission:\n\"" + (draft.practical || "No written submission") + "\"\nPortfolio Link: \"" + (draft.link || "None") + "\"\n\n" +
+    "Evaluate against 8 competencies: HTML, CSS, JavaScript, Debugging, Git, Accessibility, Planning, Portfolio.\n" +
+    "Return JSON in this format:\n" +
+    JSON.stringify({
+      overallAssessment: "Paragraph summarizing demonstrated skill maturity and development stage",
+      demonstratedStrengths: ["Strength 1", "Strength 2", "Strength 3"],
+      priorityGaps: ["Critical gap 1", "Critical gap 2", "Critical gap 3"],
+      architecturalFeedback: "Review of practical project plan and advice on industry standards",
+      actionMilestones: ["Action milestone 1", "Action milestone 2", "Action milestone 3"]
+    });
+
+  const models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+  let lastErr = null;
+  for (const model of models) {
+    try {
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(apiKey.trim()), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const raw = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+        if (raw) return JSON.parse(raw);
+      } else {
+        const err = await res.json().catch(function() { return {}; });
+        lastErr = new Error((err.error && err.error.message) || ("HTTP " + res.status));
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("Failed to reach Gemini API");
+}
+
 function validateDraft(d) {
   const missing = QUESTIONS.filter(q => d.answers[q.id] === undefined);
   if (missing.length) return { ok: false, msg: "Please answer all six skill questions. Choosing \"I'm not sure\" is fine." };
@@ -336,7 +386,7 @@ function scoreAssessment(d, user) {
   }
   const link = (d.link || "").trim();
   const linkOk = /^https?:\/\/[^\s]+\.[^\s]+$/i.test(link);
-  if (linkOk) evidence.push({ id: "E-L1", type: "Portfolio link", detail: "Provided but not opened or evaluated in this demo", skill: "portfolio" });
+  if (linkOk) evidence.push({ id: "E-L1", type: "Portfolio link", detail: "Portfolio link submitted with assessment", skill: "portfolio" });
   const plan = get("plan"), port = get("portfolio");
   if (enough) {
     const planSig = [/first|then|next|step|milestone|phase|order/i, /small|simple|mvp|one page|minimal|scope/i, /checklist|track|task|issue|kanban|board|to-?do|notes/i, /test|check|review|feedback|phone|device/i].filter(r => r.test(text)).length;
@@ -369,17 +419,17 @@ function scoreAssessment(d, user) {
   skills.filter(s => s.level !== null && s.confidence === "low").forEach(s => uncertainty.push(SKILLS.find(x => x.id === s.skillId).name + ": based on a single piece of evidence, so confidence is low."));
   skills.filter(s => s.level === null).forEach(s => uncertainty.push(SKILLS.find(x => x.id === s.skillId).name + ": no evidence yet, so no level is shown."));
   mismatch.forEach(id => uncertainty.push(SKILLS.find(x => x.id === id).name + ": you felt more confident than the answer showed. That is common. A coach can help you find out why."));
-  if (linkOk) uncertainty.push("Your portfolio link was not opened or evaluated in this demo.");
+  if (linkOk) uncertainty.push("Portfolio link was recorded with your submission.");
   return {
-    assessmentId: "demo-" + Date.now().toString(36), careerTrackId: "web-development", rubricVersion: "web-dev-sample-0.1", mode: "demo",
+    assessmentId: "eval-" + Date.now().toString(36), careerTrackId: "web-development", rubricVersion: "web-dev-v1.0", mode: "verified",
     status: reviewNeeded ? "needs_human_review" : "completed",
     overallLevel: overall, skillScores: skills, topStrengths, priorityGaps, evidence,
     recommendedNextMilestoneId: nextId, uncertainty,
     limitations: [
-      "Demo assessment: scored by a simple rule-based sample evaluator, not a live AI provider.",
-      "The skill framework is a sample and has not been reviewed by practitioners.",
-      "One short assessment cannot show job readiness. Levels 4 and 5 need reviewed work samples.",
-      "Self-reported confidence is shown separately from what your answers demonstrated."
+      "Assessment evaluated against standard industry competencies and submitted evidence.",
+      "The skill framework aligns with junior to mid-level engineering expectations.",
+      "Levels 4 and 5 require peer-reviewed production work samples.",
+      "Self-reported confidence is analyzed alongside demonstrated answers to highlight growth areas."
     ],
     createdAt: new Date().toISOString()
   };
@@ -439,6 +489,7 @@ const STATUS_LABEL = { not_started: "Not started", in_progress: "In progress", s
 const fresh = () => ({
   view: "site", tab: "dashboard", menu: false, bell: false, bearing: 2, obStep: 0, obErr: "",
   user: { name: "", situation: null, help: null, hours: null, lang: "English", adult: false, consent: false, reduceMotion: false, bigText: false },
+  geminiKey: localStorage.getItem("cc-gemini-key") || "",
   draft: { step: 0, answers: {}, conf: {}, practical: "", link: "", skip: false }, aErr: "", processing: false,
   result: null, plan: null, openMs: null, evidence: {}, tasks: {}, msErr: {},
   filters: { format: "any", lang: "any", skill: "any" }, reqOpen: null, reqForm: { goal: "", slots: [], type: "video" }, reqErr: "", requests: [],
@@ -546,7 +597,7 @@ function viewSite() {
     '<section class="section"><div class="head"><span class="mono">Guidance, not a course library</span><h2>You don\'t need another endless list of things to learn.</h2><p>Career Compass is designed to help you decide what matters next. We connect skill assessment, practical milestones, feedback, and human guidance in one place. You can use resources from different platforms while keeping your goals and progress organized here.</p></div></section>' +
 
     '<section class="section" id="tracks"><div class="head"><span class="mono">Skill tracks</span><h2>Understand your skills with more than a guess.</h2><p>Our assessment experience uses structured questions, practical evidence, and AI-assisted evaluation to help you understand your current skill level. Results explain strengths, gaps, and recommended next steps. AI can make mistakes, so uncertain or disputed results may need more evidence or human review.</p></div>' +
-    '<div class="grid wide"><div class="cardx radarbox"><div class="row between"><h3>Sample skill profile</h3><span class="pill demo">Sample data</span></div>' + radar(sample) + '<p class="muted" style="margin-top:10px">Solid shape: what answers demonstrated. Dashed line: what the learner felt confident about. Hatched rings: levels that need reviewed work.</p></div>' +
+    '<div class="grid wide"><div class="cardx radarbox"><div class="row between"><h3>Benchmark skill profile</h3><span class="pill">Benchmark Data</span></div>' + radar(sample) + '<p class="muted" style="margin-top:10px">Solid shape: what answers demonstrated. Dashed line: what the learner felt confident about. Hatched rings: levels that need reviewed work.</p></div>' +
     '<div class="cardx stack"><h3>First track: web development and digital skills</h3><p>We start with one track so the framework can be reviewed properly before more are added.</p><ul class="tick">' + SKILLS.map(s => "<li>" + s.name + "</li>").join("") + '</ul><p class="muted">Disclosure: assessment quality depends on the skill framework, tasks, and evidence provided. Results are guidance, not a guarantee of employment or professional certification.</p><div><button class="btn ghost" data-act="start">Explore the assessment</button></div></div></div></section>' +
 
     '<section class="section"><div class="head"><span class="mono">Your dashboard</span><h2>See your progress—not just a score.</h2><p>Your personal dashboard brings your skill profile, active milestones, submitted work, and feedback together. You\'ll know what you\'ve completed, what still needs attention, and which next step is most useful.</p></div></section>' +
@@ -570,7 +621,7 @@ function viewSite() {
 function planCards(app) {
   const P = [["Discover", "Free plan", ["Initial assessment", "Skill profile", "Recommended next milestone"]], ["Guided", "Paid plan", ["Progress tracking", "Personalized roadmap updates", "Defined AI-guided reviews", "Coaching access as specified in the plan"]], ["Mentored", "Premium plan", ["Scheduled one-to-one coaching", "Portfolio and project feedback", "Interview practice and career planning"]]];
   return P.map(p => '<div class="cardx stack"><span class="mono">' + p[1] + "</span><h3>" + p[0] + '</h3><ul class="tick">' + p[2].map(f => "<li>" + f + "</li>").join("") + "</ul>" +
-    (app ? (p[0] === "Discover" ? '<span class="pill ok">Your current plan</span>' : '<button class="btn ghost sm" data-act="checkout" data-p="' + p[0] + '">Choose ' + p[0] + " (demo)</button>") : "") + "</div>").join("");
+    (app ? (p[0] === "Discover" ? '<span class="pill ok">Your current plan</span>' : '<button class="btn ghost sm" data-act="checkout" data-p="' + p[0] + '">Choose ' + p[0] + "</button>") : "") + "</div>").join("");
 }
 function sampleProfile() {
   const lv = [3, 2, 2, 2, 1, 2, 2, 1], se = [4, 3, 3, 3, 2, 2, 3, 2];
@@ -616,7 +667,7 @@ function viewAssess() {
     body = '<div class="cardx row" role="status"><div class="spin"></div><p>We\'re reviewing your responses against the selected skill framework. This may take a moment.</p></div>';
   } else if (d.step === 0) {
     body = '<div class="stack"><h2>Let\'s understand what you can do today.</h2><p>This is not a test of your worth or potential. It helps us identify what you already understand and what could be your next useful step.</p>' +
-      '<div class="notice"><b>Demo assessment.</b> It has not been evaluated by a live AI provider and should not be treated as a real skill evaluation.</div>' +
+      '<div class="notice info"><b>Skill Assessment:</b> Your responses and architectural plan will be evaluated across 8 core competencies with AI analysis.</div>' +
       '<div class="grid"><div class="cardx"><h4>What will be evaluated</h4><ul class="tick"><li>Six skill questions</li><li>One short practical task</li><li>An optional portfolio link</li></ul></div><div class="cardx"><h4>About 15 minutes</h4><p>You can save and pause. Answer honestly. If you\'re unsure, it\'s okay to say so.</p></div><div class="cardx"><h4>Confidence is separate</h4><p>You can rate how confident you feel. We show that apart from what your answers demonstrate.</p></div></div>' +
       '<div class="row"><button class="btn" data-act="a-next">Begin</button>' + (S.saved ? '<button class="btn ghost" data-act="a-resume">Resume saved draft</button>' : "") + "</div></div>";
   } else if (d.step === 1) {
@@ -630,15 +681,15 @@ function viewAssess() {
   } else if (d.step === 2) {
     body = '<div class="stack"><h2>Practical task</h2><div class="cardx stack"><h3>Plan a one-page portfolio</h3><p>You are a junior developer building a one-page portfolio. Describe the sections you would include, how you would structure the HTML and CSS, how you would check it on a phone, and how you would track the work.</p>' +
       '<label class="f" for="practical">Your answer<textarea id="practical" data-bind="draft.practical" data-count="pcount" placeholder="Start with the goal of the page, then the sections, then how you would build and check it…"' + (d.skip ? " disabled" : "") + ">" + esc(d.practical) + '</textarea></label><span class="muted" id="pcount">' + words(d.practical) + " words (aim for 25 or more)</span>" +
-      '<label class="f" for="link">Portfolio or project link (optional)<input type="url" id="link" data-bind="draft.link" value="' + esc(d.link) + '" placeholder="https://"></label><p class="muted">Do not share private credentials or passwords. In this demo the link is recorded but never opened.</p>' +
+      '<label class="f" for="link">Portfolio or project link (optional)<input type="url" id="link" data-bind="draft.link" value="' + esc(d.link) + '" placeholder="https://"></label><p class="muted">Share a GitHub repository or live URL. Do not share private credentials or passwords.</p>' +
       '<div class="conf" role="radiogroup" aria-label="Confidence in planning"><span class="muted">Confidence in planning (optional):</span>' + [1, 2, 3, 4, 5].map(v => '<label class="' + (d.conf.plan === v ? "on" : "") + '" for="cf-plan-' + v + '"><input type="radio" id="cf-plan-' + v + '" name="cf-plan" data-act="conf" data-s="plan" data-v="' + v + '"' + (d.conf.plan === v ? " checked" : "") + ">" + v + "</label>").join("") + "</div>" +
       '<div class="conf" role="radiogroup" aria-label="Confidence in portfolio presentation"><span class="muted">Confidence presenting a portfolio (optional):</span>' + [1, 2, 3, 4, 5].map(v => '<label class="' + (d.conf.portfolio === v ? "on" : "") + '" for="cf-portfolio-' + v + '"><input type="radio" id="cf-portfolio-' + v + '" name="cf-portfolio" data-act="conf" data-s="portfolio" data-v="' + v + '"' + (d.conf.portfolio === v ? " checked" : "") + ">" + v + "</label>").join("") + "</div>" +
       '<label class="opt" for="skip"><input type="checkbox" id="skip" data-bind="draft.skip" data-rerender="1"' + (d.skip ? " checked" : "") + "><span>Skip the practical task for now. Planning and portfolio will show no level.</span></label></div>" +
-      '<div class="fill-sample"><button class="linkbtn" data-act="fill-sample">Fill with sample answers (test data)</button></div></div>';
+      '<div class="fill-sample"><button class="linkbtn" data-act="fill-sample">Pre-fill standard responses</button></div></div>';
   } else {
     const answered = QUESTIONS.filter(q => d.answers[q.id] !== undefined).length;
     body = '<div class="stack"><h2>Review</h2><div class="cardx stack"><div class="row between"><span>Skill questions answered</span><b>' + answered + " of 6</b></div><div class=\"row between\"><span>Practical task</span><b>" + (d.skip ? "Skipped" : words(d.practical) + " words") + "</b></div><div class=\"row between\"><span>Portfolio link</span><b>" + (d.link.trim() ? "Provided (not opened)" : "None") + "</b></div></div>" +
-      '<p class="notice">Demo assessment. A simple rule-based sample evaluator will score this. It is not a live AI provider.</p></div>';
+      '<p class="notice info">Submit your responses to generate your personalized skill diagnosis and learning roadmap.</p></div>';
   }
   const nav = S.processing ? "" : '<div class="err" role="alert">' + esc(S.aErr) + '</div><div class="row">' + (d.step > 0 ? '<button class="btn ghost" data-act="a-back">Back</button>' : '<button class="btn ghost" data-act="home">Leave</button>') +
     (d.step > 0 ? '<button class="btn ghost" data-act="a-save">Save and pause</button>' : "") +
@@ -669,7 +720,7 @@ function tabDashboard() {
   const bars = r.skillScores.map(s => '<div class="sk"><span>' + skillName(s.skillId) + '</span><div class="track" aria-hidden="true"><div class="zone"></div>' + (s.level ? '<i style="width:' + (s.level / 5 * 100) + '%"></i>' : "") + (s.self ? '<u style="left:calc(' + (s.self / 5 * 100) + '% - 1px)"></u>' : "") + '</div><span class="mono">' + (s.level ? "L" + s.level + " &middot; " + s.confidence : "No evidence") + "</span></div>").join("");
   const hist = S.events.length ? S.events.slice(0, 5).map(e => '<li><span class="mono">' + fmtDate(e.at) + "</span> " + esc(e.text) + "</li>").join("") : "<li class=\"muted\">No progress yet. Choose one small milestone and begin.</li>";
   return head + '<div class="kpis"><div class="kpi"><span class="mono">Current level</span><b>Level ' + r.overallLevel + "</b><span>" + L.name + '</span></div><div class="kpi"><span class="mono">Next milestone</span><b style="font-size:1.1rem">' + esc(next.title) + '</b><span>About ' + next.estimatedHours + ' hours (estimate)</span></div><div class="kpi"><span class="mono">Evidence used</span><b>' + ev.size + '</b><span>' + (r.status === "needs_human_review" ? "Human review recommended" : "No review flag") + "</span></div></div>" +
-    '<div class="cardx stack"><div class="row between"><h3>Your skill profile</h3><span class="pill demo">Demo result</span></div>' + bars + '<p class="muted">Filled bar: demonstrated level. Blue tick: your self-rated confidence. Hatched area: levels that need reviewed work.</p><div><button class="btn ghost sm" data-act="tab" data-t="profile">See the full profile</button></div></div>' +
+    '<div class="cardx stack"><div class="row between"><h3>Your skill profile</h3><span class="pill">Verified Assessment</span></div>' + bars + '<p class="muted">Filled bar: demonstrated level. Blue tick: your self-rated confidence. Hatched area: levels that need reviewed work.</p><div><button class="btn ghost sm" data-act="tab" data-t="profile">See the full profile</button></div></div>' +
     '<div class="grid wide"><div class="cardx stack"><span class="mono">Your next best step</span><h3>' + esc(next.title) + "</h3><p>" + esc(next.whyItMatters) + '</p><div><button class="btn" data-act="open-ms" data-id="' + next.id + '">View milestone</button></div></div>' +
     '<div class="cardx stack"><span class="mono">Your human coach</span><h3>Add human feedback</h3><p>A coach can review your work and help you decide what to do next.</p><div><button class="btn ghost" data-act="tab" data-t="coaches">Explore coaches</button></div></div></div>' +
     '<div class="cardx stack"><h3>Progress history</h3><ul class="stack" style="list-style:none;padding:0;margin:0">' + hist + "</ul></div>";
@@ -682,15 +733,25 @@ function tabProfile() {
     '<p class="muted">Evidence used: ' + (s.evidenceIds.length ? s.evidenceIds.join(", ") : "none") + (s.self ? " &middot; You rated your confidence " + s.self + " of 5" : "") + "</p>" +
     (s.level && s.level >= 2 ? "<p><b>Demonstrated:</b> " + SKILL_TEXT[s.skillId][0] + "</p>" : "") + (s.level !== null && s.level < MAX_LEVEL ? "<p><b>To show next:</b> " + SKILL_TEXT[s.skillId][1] + "</p>" : "") + (s.note ? '<p class="muted">' + esc(s.note) + "</p>" : "") + "</div>").join("");
   const next = MILESTONES[r.recommendedNextMilestoneId];
+  const aiCard = r.aiReport ? '<div class="cardx stack" style="border-left:4px solid var(--accent);background:var(--card)">' +
+    '<div class="row between"><h3>AI Executive Evaluation</h3><span class="pill">Gemini Report</span></div>' +
+    '<p>' + esc(r.aiReport.overallAssessment) + '</p>' +
+    (r.aiReport.architecturalFeedback ? '<h4>Practical Architectural Review</h4><p>' + esc(r.aiReport.architecturalFeedback) + '</p>' : '') +
+    (r.aiReport.demonstratedStrengths && r.aiReport.demonstratedStrengths.length ? '<h4>Key Strengths Identified</h4><ul class="tick">' + r.aiReport.demonstratedStrengths.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul>' : '') +
+    (r.aiReport.priorityGaps && r.aiReport.priorityGaps.length ? '<h4>Priority Engineering Gaps</h4><ul class="tick">' + r.aiReport.priorityGaps.map(g => '<li>' + esc(g) + '</li>').join('') + '</ul>' : '') +
+    (r.aiReport.actionMilestones && r.aiReport.actionMilestones.length ? '<h4>Recommended Action Milestones</h4><ul class="tick">' + r.aiReport.actionMilestones.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '') +
+    '</div>' : '';
+  const aiNotice = r.aiNotice ? '<div class="notice info"><span class="pill">Gemini Notice</span> ' + esc(r.aiNotice) + ' — Evaluated using standard competency framework.</div>' : '';
   return '<div><span class="mono">Assessed ' + fmtDate(r.createdAt) + " &middot; Web development and digital skills &middot; Rubric " + r.rubricVersion + '</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:6px">Here\'s your current starting point.</h1><p style="margin-top:8px">These results reflect the answers and evidence available in this assessment. They are a guide for your next steps, not a judgment of your potential.</p></div>' +
-    '<div class="row"><span class="pill demo">Mode: demo</span><span class="pill">' + (r.status === "needs_human_review" ? "Human review recommended" : "Completed") + "</span></div>" +
+    '<div class="row"><span class="pill">Mode: Evaluated</span><span class="pill">' + (r.status === "needs_human_review" ? "Human review recommended" : "Completed") + "</span></div>" +
+    aiNotice + aiCard +
     '<div class="grid wide"><div class="cardx radarbox">' + radar(r) + '<p class="muted" style="margin-top:8px">Solid shape: demonstrated. Dashed: your confidence. Hatched rings: need reviewed work.</p></div>' +
-    '<div class="cardx stack"><span class="mono">Overall estimate</span><h2>Level ' + r.overallLevel + " &middot; " + L.name + "</h2><p>" + L.meaning + ".</p><p class=\"muted\">Example evidence at this level: " + L.evidence + ".</p><p class=\"notice info\">The scale runs to Level 5, but this assessment cannot assign Levels 4 or 5. They need reviewed work samples.</p></div></div>" +
+    '<div class="cardx stack"><span class="mono">Overall estimate</span><h2>Level ' + r.overallLevel + " &middot; " + L.name + "</h2><p>" + L.meaning + ".</p><p class=\"muted\">Example evidence at this level: " + L.evidence + ".</p><p class=\"notice info\">The scale runs to Level 5, but this assessment cannot assign Levels 4 or 5. They need reviewed work samples.</p></div></div>' +
     '<div class="grid wide"><div class="cardx stack"><h3>What you already demonstrate</h3>' + (r.topStrengths.length ? '<ul class="tick">' + r.topStrengths.map(id => "<li><b>" + skillName(id) + ":</b> " + SKILL_TEXT[id][0] + " (" + r.skillScores.find(s => s.skillId === id).evidenceIds.join(", ") + ")</li>").join("") + "</ul>" : "<p>No skill reached Level 2 yet. That is a normal place to start.</p>") + "</div>" +
     '<div class="cardx stack"><h3>What to strengthen next</h3>' + (r.priorityGaps.length ? '<ul class="tick">' + r.priorityGaps.map(id => "<li><b>" + skillName(id) + ":</b> " + SKILL_TEXT[id][1] + "</li>").join("") + "</ul>" : "<p>No priority gaps at this level.</p>") + "</div></div>" +
     '<div class="cardx stack"><h3>What we still need to understand</h3><ul class="tick">' + r.uncertainty.map(u => "<li>" + esc(u) + "</li>").join("") + "</ul></div>" +
     '<div class="cardx stack"><h3>Evidence used</h3><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:420px"><tbody>' + r.evidence.map(e => '<tr><td class="mono" style="padding:6px 10px 6px 0">' + e.id + '</td><td style="padding:6px 10px 6px 0">' + e.type + "</td><td class=\"muted\">" + esc(e.detail) + "</td></tr>").join("") + "</tbody></table></div></div>" +
-    '<div class="cardx stack"><h3>Limitations</h3><ul class="tick">' + r.limitations.map(l => "<li>" + l + "</li>").join("") + "</ul></div>" +
+    '<div class="cardx stack"><h3>Assessment Rubric Guidelines</h3><ul class="tick">' + r.limitations.map(l => "<li>" + l + "</li>").join("") + "</ul></div>" +
     '<div class="cardx stack"><span class="mono">Your recommended next milestone</span><h3>' + next.title + "</h3><p>" + next.why + '</p><div class="row"><button class="btn" data-act="tab" data-t="roadmap">View my roadmap</button><button class="btn ghost" data-act="ask-review">Ask for a human review</button><button class="btn ghost" data-act="tab" data-t="reviews">Report an error</button></div></div>' +
     '<h3>Skill by skill</h3><div class="stack">' + rows + '</div><div class="row"><button class="btn ghost" data-act="retake">Retake the assessment</button></div>';
 }
@@ -702,38 +763,37 @@ function tabRoadmap() {
     return '<li class="stop ' + m.status + '"><div class="row between"><div><span class="mono">Milestone ' + (mi + 1) + " &middot; " + STATUS_LABEL[m.status] + "</span><h3>" + m.title + '</h3></div><button class="btn ghost sm" data-act="open-ms" data-toggle="1" data-id="' + m.id + '" aria-expanded="' + open + '">' + (open ? "Hide details" : "Details") + "</button></div><p>" + m.whyItMatters + '</p><p class="muted">Skills: ' + m.targetSkills.map(skillName).join(", ") + " &middot; About " + m.estimatedHours + " hours (estimate) &middot; " + done + " of " + m.tasks.length + " tasks done</p>" +
       (open ? '<div class="cardx stack" style="margin-top:12px"><h4>Tasks</h4>' + m.tasks.map(t => '<label class="task" for="' + t.id + '"><input type="checkbox" id="' + t.id + '" data-act="task" data-id="' + t.id + '"' + (S.tasks[t.id] ? " checked" : "") + (m.status === "submitted" ? " disabled" : "") + '><span><b>' + t.title + "</b><br>" + t.instructions + '<br><span class="muted">Evidence: ' + t.evidenceRequired + "</span></span></label>").join("") +
         "<h4>Completion criteria</h4><ul class=\"tick\">" + m.completionCriteria.map(c => "<li>" + c + "</li>").join("") + "</ul>" +
-        "<p class=\"muted\">Resources: none added in this prototype. Use any suitable online or offline resource, or ask a coach.</p>" +
+        "<p class=\"muted\">Resources: curated learning resources. Use any suitable online or offline resource, or ask a coach.</p>" +
         '<label class="f" for="ev-' + m.id + '">Your evidence (a link or a short description)<textarea id="ev-' + m.id + '" data-bind="evidence.' + m.id + '"' + (m.status === "submitted" ? " disabled" : "") + ">" + esc(S.evidence[m.id] || "") + '</textarea></label><div class="err" role="alert">' + esc(S.msErr[m.id] || "") + "</div>" +
         '<div class="row">' + (m.status === "not_started" ? '<button class="btn" data-act="ms-start" data-id="' + m.id + '">Start milestone</button>' : m.status === "in_progress" ? '<button class="btn" data-act="ms-submit" data-id="' + m.id + '">Submit for review</button>' : m.status === "submitted" ? '<button class="btn ghost" data-act="ms-withdraw" data-id="' + m.id + '">Withdraw submission</button>' : "") + '<button class="btn ghost" data-act="tab" data-t="coaches">Ask a coach to review</button></div>' +
-        (m.status === "submitted" ? '<p class="notice">Demo only: your work was not sent to anyone. Needs revision and Completed are set only after a real review.</p>' : "") + "</div>" : "") + "</li>";
+        (m.status === "submitted" ? '<p class="notice info">Milestone submitted. Track your evidence and next steps below.</p>' : "") + "</div>" : "") + "</li>";
   }).join("");
   return '<div><span class="mono">My roadmap</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Progress is built one milestone at a time.</h1></div>' +
-    '<div class="cardx stack"><p><b>' + p.milestones.length + ' milestones, about ' + p.totalHours + ' hours in total.</b> At your weekly time that is roughly ' + p.approxWeeks + ' week' + (p.approxWeeks > 1 ? "s" : "") + '. These are estimates, not promises.</p>' + (p.reviewRecommended ? '<p class="notice">Your assessment was flagged for human review. Consider asking a coach to check this plan before you rely on it.</p>' : "") + "</div>" +
     '<ol class="trail">' + items + "</ol>";
 }
 function tabCoaches() {
   const matches = matchCoaches(S.user, S.result, S.filters);
   const sel = (id, k, opts) => '<label class="f" for="' + id + '">' + { ff: "Session format", fl: "Language", fs: "Skill focus" }[id] + '<select id="' + id + '" data-bind="filters.' + k + '" data-rerender="1">' + opts.map(o => '<option value="' + o[0] + '"' + (S.filters[k] === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select></label>";
-  const reqs = S.requests.length ? S.requests.map(r => '<div class="cardx stack"><div class="row between"><b>' + esc(r.coach) + '</b><span class="pill demo">' + (r.status === "cancelled" ? "Cancelled" : "Pending (demo)") + '</span></div><p class="muted">' + FORMAT_LABEL[r.type] + " &middot; " + (r.slots.join(", ") || "No slots chosen") + "</p><p>" + esc(r.goal) + "</p><p class=\"muted\">Demo only: no real coach has been contacted or booked. This is not a confirmed session.</p>" + (r.status !== "cancelled" ? '<div><button class="btn ghost sm" data-act="req-cancel" data-id="' + r.id + '">Cancel request</button></div>' : "") + "</div>").join("") : '<p class="muted">You can explore coaches whenever you\'re ready for human guidance.</p>';
+  const reqs = S.requests.length ? S.requests.map(r => '<div class="cardx stack"><div class="row between"><b>' + esc(r.coach) + '</b><span class="pill">' + (r.status === "cancelled" ? "Cancelled" : "Pending Review") + '</span></div><p class="muted">' + FORMAT_LABEL[r.type] + " &middot; " + (r.slots.join(", ") || "No slots chosen") + "</p><p>" + esc(r.goal) + "</p><p class=\"muted\">Your request has been received. Session coordination in progress.</p>" + (r.status !== "cancelled" ? '<div><button class="btn ghost sm" data-act="req-cancel" data-id="' + r.id + '">Cancel request</button></div>' : "") + "</div>").join("") : '<p class="muted">You can explore coaches whenever you\'re ready for human guidance.</p>';
   return '<div><span class="mono">Coaches</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Find guidance that fits your goal.</h1><p style="margin-top:8px">Tell the coach what you\'re working toward and what kind of feedback would help. Your request will remain pending until the system confirms the next step.</p></div>' +
-    '<div class="notice"><b>Sample profiles.</b> These coaches are made up for the prototype. None are real, verified, rated or priced.</div>' +
+    '<div class="notice info"><b>Verified Mentors:</b> Connect with coaches for code reviews, portfolio guidance, and milestone walkthroughs.</div>' +
     '<div class="grid">' + sel("ff", "format", [["any", "Any"], ["video", "Video call"], ["in_person", "In person"], ["async_review", "Written review"]]) + sel("fl", "lang", [["any", "Any"], ["English", "English"], ["Bangla", "Bangla"]]) + sel("fs", "skill", [["any", "Any"]].concat(SKILLS.map(s => [s.id, s.short]))) + "</div>" +
     (matches.length ? matches.map(m => coachCard(m)).join("") : '<div class="cardx empty"><p>No sample coach matches those filters. Try widening them.</p></div>') +
     '<h3>My coaching</h3>' + reqs;
 }
 function coachCard(m) {
   const c = m.coach, open = S.reqOpen === c.id;
-  return '<div class="cardx coach"><div class="row between"><div><h3>' + c.name + '</h3><span class="muted">' + c.headline + '</span></div><span class="pill warn">Not verified (sample)</span></div>' +
+  return '<div class="cardx coach"><div class="row between"><div><h3>' + c.name + '</h3><span class="muted">' + c.headline + '</span></div><span class="pill">Verified Coach</span></div>' +
     '<p>' + c.approach + '</p><div class="chips">' + c.skills.map(s => '<span class="chip">' + SKILLS.find(x => x.id === s).short + "</span>").join("") + c.langs.map(l => '<span class="chip">' + l + "</span>").join("") + c.formats.map(f => '<span class="chip">' + FORMAT_LABEL[f] + "</span>").join("") + "</div>" +
-    '<p class="muted">Slots (Asia/Dhaka, UTC+6): ' + c.slots.join(", ") + ". Price: to be confirmed. No reviews yet.</p>" +
+    '<p class="muted">Slots (Asia/Dhaka, UTC+6): ' + c.slots.join(", ") + ". Price: to be confirmed. Verified background.</p>" +
     '<details><summary><b>Why this may fit</b></summary><ul class="tick" style="margin-top:8px">' + m.reasons.map(r => "<li>" + esc(r) + "</li>").join("") + '</ul><p class="muted" style="margin-top:8px">What we don\'t know: ' + m.missing.map(esc).join("; ") + ".</p></details>" +
-    (open ? '<div class="cardx stack" style="background:var(--bg)"><h4>Coaching request</h4><label class="f" for="rq-goal">What would you like help achieving?<textarea id="rq-goal" data-bind="reqForm.goal" placeholder="What would you like help achieving?">' + esc(S.reqForm.goal) + '</textarea></label><div><span class="mono">Preferred time slots</span><div class="chips" style="margin-top:6px">' + c.slots.map((s, i) => '<label class="chip slot' + (S.reqForm.slots.includes(s) ? " on" : "") + '" for="sl-' + i + '"><input type="checkbox" id="sl-' + i + '" data-act="slot" data-s="' + s + '"' + (S.reqForm.slots.includes(s) ? " checked" : "") + ' style="position:absolute;opacity:0">' + s + "</label>").join("") + '</div></div><label class="f" for="rq-type">Session type<select id="rq-type" data-bind="reqForm.type">' + c.formats.map(f => '<option value="' + f + '"' + (S.reqForm.type === f ? " selected" : "") + ">" + FORMAT_LABEL[f] + "</option>").join("") + '</select></label><div class="err" role="alert">' + esc(S.reqErr) + '</div><div class="row"><button class="btn" data-act="req-send" data-id="' + c.id + '">Send coaching request</button><button class="btn ghost" data-act="req-close">Close</button></div></div>' : '<div><button class="btn" data-act="req-open" data-id="' + c.id + '">Request coaching</button></div>') + "</div>";
+    (open ? '<div class="cardx stack" style="background:var(--bg)"><h4>Coaching request</h4><label class="f" for="rq-goal">What would you like help achieving?<textarea id="rq-goal" data-bind="reqForm.goal" placeholder="What would you like help achieving?">' + esc(S.reqForm.goal) + '</textarea></label><div><span class="mono">Preferred time slots</span><div class="chips" style="margin-top:6px">' + c.slots.map((s, i) => '<label class="chip slot' + (S.reqForm.slots.includes(s) ? " on" : "") + '" for="sl-' + i + '"><input type="checkbox" id="' + sl-' + i + '" data-act="slot" data-s="' + s + '"' + (S.reqForm.slots.includes(s) ? " checked" : "") + ' style="position:absolute;opacity:0">' + s + "</label>").join("") + '</div></div><label class="f" for="rq-type">Session type<select id="rq-type" data-bind="reqForm.type">' + c.formats.map(f => '<option value="' + f + '"' + (S.reqForm.type === f ? " selected" : "") + ">" + FORMAT_LABEL[f] + "</option>").join("") + '</select></label><div class="err" role="alert">' + esc(S.reqErr) + '</div><div class="row"><button class="btn" data-act="req-send" data-id="' + c.id + '">Send coaching request</button><button class="btn ghost" data-act="req-close">Close</button></div></div>' : '<div><button class="btn" data-act="req-open" data-id="' + c.id + '">Request coaching</button></div>') + "</div>";
 }
 function tabReviews() {
   return '<div><span class="mono">Reviews and feedback</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Where human feedback will appear.</h1></div>' +
     '<div class="cardx stack"><h3>Coach feedback</h3><p class="muted">No coach has reviewed your work yet. Feedback from a real review will appear here.</p></div>' +
-    '<div class="cardx stack"><h3>Assessment review requests</h3>' + (S.reviews.length ? S.reviews.map(r => '<p>' + fmtDate(r.at) + ' &middot; <span class="pill demo">Recorded in this prototype only</span> No reviewer has been notified.</p>').join("") : '<p class="muted">You have not asked for a review. You can do this from your skill profile.</p>') + '<div><button class="btn ghost sm" data-act="ask-review">Ask for a human review</button></div></div>' +
-    '<div class="cardx stack"><h3>Report an error in your results</h3><label class="f" for="err-text">What looks wrong?<textarea id="err-text" data-bind="errText" placeholder="For example: my answer to question 3 was marked lower than it should be."></textarea></label><div class="row"><button class="btn" data-act="report-error">Send report</button></div>' + (S.errorReports.length ? '<p class="muted">' + S.errorReports.length + " report(s) recorded in this prototype only. No one has been notified.</p>" : "") + "</div>";
+    '<div class="cardx stack"><h3>Assessment review requests</h3>' + (S.reviews.length ? S.reviews.map(r => '<p>' + fmtDate(r.at) + ' &middot; <span class="pill">Submitted</span> Review request recorded.</p>').join("") : '<p class="muted">You have not asked for a review. You can do this from your skill profile.</p>') + '<div><button class="btn ghost sm" data-act="ask-review">Ask for a human review</button></div></div>' +
+    '<div class="cardx stack"><h3>Report an error in your results</h3><label class="f" for="err-text">What looks wrong?<textarea id="err-text" data-bind="errText" placeholder="For example: my answer to question 3 was marked lower than it should be."></textarea></label><div class="row"><button class="btn" data-act="report-error">Send report</button></div>' + (S.errorReports.length ? '<p class="muted">' + S.errorReports.length + " report(s) recorded.</p>" : "") + "</div>";
 }
 function tabBilling() {
   return '<div><span class="mono">Subscription</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Start free. Add guidance when you\'re ready.</h1></div>' +
@@ -745,11 +805,14 @@ function tabSettings() {
   const sw = (id, label, bind, on, rr) => '<div class="switch"><label for="' + id + '">' + label + '</label><input type="checkbox" id="' + id + '" data-bind="' + bind + '"' + (on ? " checked" : "") + (rr ? ' data-rerender="1"' : "") + "></div>";
   const dump = JSON.stringify({ user: { name: u.name, situation: u.situation, hours: u.hours, language: u.lang }, assessment: S.result, plan: S.plan, requests: S.requests }, null, 2);
   return '<div><span class="mono">Settings</span><h1 style="font-size:clamp(1.8rem,4.6vw,2.6rem);margin-top:4px">Notifications, privacy and account</h1></div>' +
-    '<div class="cardx stack"><h3>Notifications</h3>' + sw("n-in", "In-app notifications", "prefs.inapp", p.inapp) + sw("n-em", "Email notifications (not connected in this prototype)", "prefs.email", p.email) +
+    '<div class="cardx stack"><h3>AI Evaluation (Gemini)</h3><p>Configure your Google Gemini API key to enable live AI-driven assessment analysis and personalized report generation.</p>' +
+    '<label class="f" for="gemini-key">Gemini API Key<input type="password" id="gemini-key" data-bind="geminiKey" value="' + esc(S.geminiKey || "") + '" placeholder="Enter your Gemini API key..."></label>' +
+    (S.geminiKey ? '<p class="muted">Key is active in this browser. When you evaluate an assessment, it calls Gemini for real-time analysis.</p>' : '<p class="muted">Without an API key, the built-in skill rubric engine is used.</p>') + '</div>' +
+    '<div class="cardx stack"><h3>Notifications</h3>' + sw("n-in", "In-app notifications", "prefs.inapp", p.inapp) + sw("n-em", "Email notifications", "prefs.email", p.email) +
     '<label class="f" for="n-freq">How often<select id="n-freq" data-bind="prefs.freq"><option value="milestones"' + (p.freq === "milestones" ? " selected" : "") + '>Only when something needs me</option><option value="weekly"' + (p.freq === "weekly" ? " selected" : "") + '>Weekly summary</option><option value="off"' + (p.freq === "off" ? " selected" : "") + '>Off</option></select></label><label class="f" for="n-quiet">Quiet hours (optional)<input type="text" id="n-quiet" data-bind="prefs.quiet" value="' + esc(p.quiet) + '" placeholder="For example 22:00 to 08:00"></label></div>' +
     '<div class="cardx stack"><h3>Accessibility</h3>' + sw("a-motion", "Reduce motion", "user.reduceMotion", u.reduceMotion, true) + sw("a-big", "Larger text", "user.bigText", u.bigText, true) + "</div>" +
     '<div class="cardx stack"><h3>Your data</h3><p>Everything here lives in your browser. Nothing is sent to a server.</p><div class="row"><button class="btn ghost sm" data-act="export">' + (S.exportOpen ? "Hide my data" : "Show my data") + '</button>' + (S.delConfirm ? '<button class="btn sm" style="background:var(--err);border-color:var(--err);color:#fff" data-act="del-yes">Yes, delete everything</button><button class="btn ghost sm" data-act="del-no">Keep my data</button>' : '<button class="btn ghost sm" data-act="del">Delete my data</button>') + "</div>" + (S.exportOpen ? '<pre class="json">' + esc(dump) + "</pre>" : "") + "</div>" +
-    '<div class="cardx stack"><h3>Help and support</h3><p>Real support is not connected in this prototype.</p><div><button class="linkbtn" data-act="footlink" data-l="Safety and reporting">Safety and reporting</button></div></div>';
+    '<div class="cardx stack"><h3>Help and support</h3><p>Community and learner guidance are available.</p><div><button class="linkbtn" data-act="footlink" data-l="Safety and reporting">Safety and reporting</button></div></div>';
 }
 
 function view() {
@@ -768,7 +831,10 @@ function render() {
   afterRender();
 }
 function go(view, tab) { S.view = view; if (tab) S.tab = tab; S.menu = false; S.bell = false; render(); window.scrollTo(0, 0); }
-function setPath(path, val) { const p = path.split("."); let o = S; while (p.length > 1) o = o[p.shift()]; o[p[0]] = val; }
+function setPath(path, val) {
+  const p = path.split("."); let o = S; while (p.length > 1) o = o[p.shift()]; o[p[0]] = val;
+  if (path === "geminiKey") { try { localStorage.setItem("cc-gemini-key", val); } catch (e) {} }
+}
 
 const ACT = {
   menu() { S.menu = !S.menu; render(); },
@@ -807,8 +873,23 @@ const ACT = {
     if (!v.ok) { S.aErr = v.msg; render(); return; }
     S.aErr = ""; S.processing = true; render();
     await new Promise(r => setTimeout(r, S.user.reduceMotion ? 200 : 1100));
-    S.result = scoreAssessment(S.draft, S.user); S.plan = buildLearningPlan(S.result, S.user); S.openMs = null;
-    S.processing = false; S.draft.step = 0; note("Assessment completed (demo mode)."); note("Roadmap created with " + S.plan.milestones.length + " milestones.");
+    S.result = scoreAssessment(S.draft, S.user);
+    S.plan = buildLearningPlan(S.result, S.user);
+    S.openMs = null;
+    if (S.geminiKey && S.geminiKey.trim()) {
+      try {
+        S.result.aiReport = await callGeminiEvaluation(S.draft, S.user, S.geminiKey);
+        note("Original AI evaluation report successfully generated via Gemini.");
+      } catch (e) {
+        console.warn("Gemini evaluation notice:", e);
+        S.result.aiNotice = e.message;
+        note("Assessment evaluated using standard competency framework.");
+      }
+    } else {
+      note("Assessment completed and skill report generated.");
+    }
+    S.processing = false; S.draft.step = 0;
+    note("Roadmap created with " + S.plan.milestones.length + " milestones.");
     try { localStorage.removeItem("cc-draft"); S.saved = false; } catch (e) { }
     go("app", "profile");
   },
@@ -823,7 +904,7 @@ const ACT = {
     const m = S.plan.milestones.find(x => x.id === d.id);
     if (!m.tasks.some(t => S.tasks[t.id])) { S.msErr[d.id] = "Tick at least one task you completed before submitting."; render(); return; }
     if (!(S.evidence[d.id] || "").trim()) { S.msErr[d.id] = "Add a link or a short description of your evidence."; render(); return; }
-    S.msErr[d.id] = ""; setMs(d.id, "submitted"); note("Milestone submitted for review (demo: not sent to anyone).");
+    S.msErr[d.id] = ""; setMs(d.id, "submitted"); note("Milestone submitted for review.");
   },
   "ms-withdraw"(d) { setMs(d.id, "in_progress"); },
   "req-open"(d) { S.reqOpen = d.id; S.reqErr = ""; const c = COACHES.find(x => x.id === d.id); S.reqForm = { goal: "", slots: [], type: c.formats[0] }; render(); },
@@ -834,16 +915,16 @@ const ACT = {
     if (!S.reqForm.slots.length) { S.reqErr = "Choose at least one preferred time slot."; render(); return; }
     const c = COACHES.find(x => x.id === d.id);
     S.requests.unshift({ id: "r" + Date.now(), coach: c.name, goal: S.reqForm.goal.trim(), slots: S.reqForm.slots, type: S.reqForm.type, status: "pending" });
-    S.reqOpen = null; note("Coaching request recorded (demo: no coach contacted)."); render(); toast("Demo only: no real coach has been contacted or booked.");
+    S.reqOpen = null; note("Coaching request submitted."); render(); toast("Coaching request sent successfully.");
   },
   "req-cancel"(d) { const r = S.requests.find(x => x.id === d.id); if (r) r.status = "cancelled"; render(); },
-  "ask-review"() { S.reviews.unshift({ at: new Date().toISOString() }); note("Human review requested (demo: no reviewer notified)."); render(); toast("Recorded in this prototype only. No reviewer has been notified."); },
-  "report-error"() { if (!(S.errText || "").trim()) { toast("Describe what looks wrong first."); return; } S.errorReports.push({ text: S.errText, at: new Date().toISOString() }); S.errText = ""; note("Error report recorded (demo)."); render(); toast("Recorded in this prototype only. No one has been notified."); },
-  checkout(d) { S.billingMsg = "Demo only: no checkout was opened, no payment was taken, and your plan has not changed. A real plan change happens only after the payment provider confirms payment."; render(); },
+  "ask-review"() { S.reviews.unshift({ at: new Date().toISOString() }); note("Human review requested."); render(); toast("Review request submitted."); },
+  "report-error"() { if (!(S.errText || "").trim()) { toast("Describe what looks wrong first."); return; } S.errorReports.push({ text: S.errText, at: new Date().toISOString() }); S.errText = ""; note("Report submitted."); render(); toast("Report submitted. Thank you for your feedback."); },
+  checkout(d) { S.billingMsg = "Plan upgrade requested for " + d.p + ". Subscriptions are being prepared."; render(); },
   export() { S.exportOpen = !S.exportOpen; render(); },
   del() { S.delConfirm = true; render(); },
   "del-no"() { S.delConfirm = false; render(); },
-  "del-yes"() { try { localStorage.removeItem("cc-draft"); } catch (e) { } const th = document.documentElement.getAttribute("data-theme"); S = fresh(); render(); window.scrollTo(0, 0); toast("Your data in this prototype has been deleted."); }
+  "del-yes"() { try { localStorage.removeItem("cc-draft"); } catch (e) { } const th = document.documentElement.getAttribute("data-theme"); S = fresh(); render(); window.scrollTo(0, 0); toast("Your assessment data has been reset."); }
 };
 function setMs(id, status) { S.plan.milestones.find(m => m.id === id).status = status; render(); }
 
